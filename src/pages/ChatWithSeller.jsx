@@ -4,7 +4,7 @@ import { useParams, Link } from 'react-router-dom';
 import Layout from '../components/layout/Layout';
 import { ArrowLeft, Send, UserCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 const ChatWithSeller = () => {
   const { sellerId, productId } = useParams();
@@ -74,7 +74,7 @@ const ChatWithSeller = () => {
     setTimeout(() => {
       const sellerResponse = {
         sender: 'seller',
-        text: 'Thanks for your message! I\'ll get back to you as soon as possible.',
+        text: "Thanks for your message! I'll get back to you as soon as possible.",
         timestamp: new Date().toISOString()
       };
       

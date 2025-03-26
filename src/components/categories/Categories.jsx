@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
-const Categories = () => {
+const Categories = ({ onCategoryChange }) => {
   const [activeCategory, setActiveCategory] = useState('All');
   const categoriesRef = useRef(null);
   const [showLeftScroll, setShowLeftScroll] = useState(false);
@@ -53,6 +53,13 @@ const Categories = () => {
     });
   };
 
+  const handleCategoryClick = (category) => {
+    setActiveCategory(category);
+    if (onCategoryChange) {
+      onCategoryChange(category);
+    }
+  };
+
   return (
     <div className="relative bg-white border-b border-gray-100 overflow-hidden">
       <div className="container mx-auto px-4">
@@ -78,7 +85,7 @@ const Categories = () => {
               {categories.map((category) => (
                 <button
                   key={category}
-                  onClick={() => setActiveCategory(category)}
+                  onClick={() => handleCategoryClick(category)}
                   className={`category-pill whitespace-nowrap ${activeCategory === category ? 'active' : ''}`}
                 >
                   {category}

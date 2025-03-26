@@ -1,15 +1,18 @@
 
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, Bell, Heart, UserCircle, ShoppingBag, Menu, X } from 'lucide-react';
+import { Search, Bell, Heart, UserCircle, ShoppingBag, Menu, X, LogOut } from 'lucide-react';
 import { useFavorites } from '../../context/FavoritesContext';
+import { useAuth } from '../../context/AuthContext';
 
 const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const navigate = useNavigate();
   const { getFavoritesCount } = useFavorites();
+  const { currentUser, signOut, isAuthenticated } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -32,6 +35,15 @@ const Header = () => {
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
+  };
+
+  const toggleProfileMenu = () => {
+    setIsProfileMenuOpen(!isProfileMenuOpen);
+  };
+
+  const handleSignOut = () => {
+    signOut();
+    setIsProfileMenuOpen(false);
   };
 
   const favoritesCount = getFavoritesCount();
@@ -74,23 +86,67 @@ const Header = () => {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-5">
-            <Link to="/favorites" className="text-marketplace-500 hover:text-marketplace-accent transition duration-200 relative" aria-label="Favorites">
-              <Heart size={22} />
-              {favoritesCount > 0 && (
-                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
-                  {favoritesCount}
-                </span>
-              )}
-            </Link>
-            <button className="text-marketplace-500 hover:text-marketplace-accent transition duration-200" aria-label="Notifications">
-              <Bell size={22} />
-            </button>
-            <Link to="/sell" className="px-4 py-2 bg-marketplace-accent text-white font-medium rounded-lg shadow-sm transition-all duration-200 hover:bg-opacity-90 hover:translate-y-[-1px] active:translate-y-[0px]">
-              <ShoppingBag size={18} className="inline mr-1.5" /> Sell
-            </Link>
-            <Link to="/profile" className="text-marketplace-500 hover:text-marketplace-accent transition duration-200" aria-label="Profile">
-              <UserCircle size={24} />
-            </Link>
+            {isAuthenticated() ? (
+              <>
+                <Link to="/favorites" className="text-marketplace-500 hover:text-marketplace-accent transition duration-200 relative" aria-label="Favorites">
+                  <Heart size={22} />
+                  {favoritesCount > 0 && (
+                    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                      {favoritesCount}
+                    </span>
+                  )}
+                </Link>
+                <Link to="/notifications" className="text-marketplace-500 hover:text-marketplace-accent transition duration-200 relative" aria-label="Notifications">
+                  <Bell size={22} />
+                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                    5
+                  </span>
+                </Link>
+                <Link to="/sell" className="px-4 py-2 bg-marketplace-accent text-white font-medium rounded-lg shadow-sm transition-all duration-200 hover:bg-opacity-90 hover:translate-y-[-1px] active:translate-y-[0px]">
+                  <ShoppingBag size={18} className="inline mr-1.5" /> Sell
+                </Link>
+                <div className="relative">
+                  <button 
+                    onClick={toggleProfileMenu}
+                    className="text-marketplace-500 hover:text-marketplace-accent transition duration-200"
+                    aria-label="Profile"
+                  >
+                    <UserCircle size={24} />
+                  </button>
+                  
+                  {isProfileMenuOpen && (
+                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-100">
+                      <div className="px-4 py-2 text-sm text-gray-700 border-b border-gray-100">
+                        <div className="font-medium">{currentUser?.name || 'User'}</div>
+                        <div className="text-xs text-gray-500 truncate">{currentUser?.email}</div>
+                      </div>
+                      <Link
+                        to="/profile"
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        onClick={() => setIsProfileMenuOpen(false)}
+                      >
+                        Profile
+                      </Link>
+                      <button
+                        onClick={handleSignOut}
+                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      >
+                        <LogOut size={16} className="inline mr-2" /> Sign out
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </>
+            ) : (
+              <>
+                <Link to="/signin" className="text-marketplace-500 hover:text-marketplace-accent font-medium">
+                  Sign In
+                </Link>
+                <Link to="/signup" className="px-4 py-2 bg-marketplace-accent text-white font-medium rounded-lg shadow-sm transition-all duration-200 hover:bg-opacity-90 hover:translate-y-[-1px] active:translate-y-[0px]">
+                  Sign Up
+                </Link>
+              </>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -131,40 +187,73 @@ const Header = () => {
       {isMobileMenuOpen && (
         <div className="md:hidden bg-white border-t border-gray-100 shadow-sm animate-fade-in">
           <div className="container px-4 py-4 space-y-4">
-            <Link 
-              to="/favorites" 
-              className="flex items-center py-2.5 text-marketplace-500 hover:text-marketplace-accent"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              <Heart size={18} className="mr-3" /> 
-              Favorites
-              {favoritesCount > 0 && (
-                <span className="ml-2 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
-                  {favoritesCount}
-                </span>
-              )}
-            </Link>
-            <Link 
-              to="/" 
-              className="flex items-center py-2.5 text-marketplace-500 hover:text-marketplace-accent"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              <Bell size={18} className="mr-3" /> Notifications
-            </Link>
-            <Link 
-              to="/sell" 
-              className="flex items-center py-2.5 text-marketplace-500 hover:text-marketplace-accent"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              <ShoppingBag size={18} className="mr-3" /> Sell Item
-            </Link>
-            <Link 
-              to="/profile" 
-              className="flex items-center py-2.5 text-marketplace-500 hover:text-marketplace-accent"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              <UserCircle size={18} className="mr-3" /> Profile
-            </Link>
+            {isAuthenticated() ? (
+              <>
+                <Link 
+                  to="/favorites" 
+                  className="flex items-center py-2.5 text-marketplace-500 hover:text-marketplace-accent"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <Heart size={18} className="mr-3" /> 
+                  Favorites
+                  {favoritesCount > 0 && (
+                    <span className="ml-2 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                      {favoritesCount}
+                    </span>
+                  )}
+                </Link>
+                <Link 
+                  to="/notifications" 
+                  className="flex items-center py-2.5 text-marketplace-500 hover:text-marketplace-accent"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <Bell size={18} className="mr-3" /> Notifications
+                  <span className="ml-2 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                    5
+                  </span>
+                </Link>
+                <Link 
+                  to="/sell" 
+                  className="flex items-center py-2.5 text-marketplace-500 hover:text-marketplace-accent"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <ShoppingBag size={18} className="mr-3" /> Sell Item
+                </Link>
+                <Link 
+                  to="/profile" 
+                  className="flex items-center py-2.5 text-marketplace-500 hover:text-marketplace-accent"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <UserCircle size={18} className="mr-3" /> Profile
+                </Link>
+                <button
+                  onClick={() => {
+                    handleSignOut();
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className="flex w-full items-center py-2.5 text-marketplace-500 hover:text-marketplace-accent"
+                >
+                  <LogOut size={18} className="mr-3" /> Sign out
+                </button>
+              </>
+            ) : (
+              <>
+                <Link 
+                  to="/signin" 
+                  className="flex items-center py-2.5 text-marketplace-500 hover:text-marketplace-accent"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Sign In
+                </Link>
+                <Link 
+                  to="/signup" 
+                  className="flex items-center py-2.5 text-marketplace-500 hover:text-marketplace-accent"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Sign Up
+                </Link>
+              </>
+            )}
           </div>
         </div>
       )}

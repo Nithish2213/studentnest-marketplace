@@ -1,12 +1,12 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Layout from '../components/layout/Layout';
 import HeroBanner from '../components/home/HeroBanner';
 import ProductSection from '../components/products/ProductSection';
 
 // Mock data for trending products
-const trendingProducts = [
+const allProducts = [
   {
     id: 1,
     title: 'MacBook Pro 2019',
@@ -17,7 +17,8 @@ const trendingProducts = [
     location: 'West Campus',
     timeAgo: '2 days ago',
     rating: 4.9,
-    isFavorite: false
+    isFavorite: false,
+    category: 'Electronics'
   },
   {
     id: 2,
@@ -29,7 +30,8 @@ const trendingProducts = [
     location: 'Library',
     timeAgo: '5 hours ago',
     rating: 4.7,
-    isFavorite: true
+    isFavorite: true,
+    category: 'Books'
   },
   {
     id: 3,
@@ -41,7 +43,8 @@ const trendingProducts = [
     location: 'North Dorms',
     timeAgo: '1 day ago',
     rating: 4.5,
-    isFavorite: false
+    isFavorite: false,
+    category: 'Furniture'
   },
   {
     id: 4,
@@ -53,7 +56,8 @@ const trendingProducts = [
     location: 'Engineering Building',
     timeAgo: '3 days ago',
     rating: 5.0,
-    isFavorite: false
+    isFavorite: false,
+    category: 'Electronics'
   },
   {
     id: 5,
@@ -65,12 +69,9 @@ const trendingProducts = [
     location: 'Recreation Center',
     timeAgo: '4 days ago',
     rating: 4.6,
-    isFavorite: false
-  }
-];
-
-// Mock data for recent listings
-const recentListings = [
+    isFavorite: false,
+    category: 'Transportation'
+  },
   {
     id: 6,
     title: 'Mini Fridge',
@@ -81,7 +82,8 @@ const recentListings = [
     location: 'East Hall',
     timeAgo: '1 hour ago',
     rating: 4.2,
-    isFavorite: false
+    isFavorite: false,
+    category: 'Electronics'
   },
   {
     id: 7,
@@ -93,7 +95,8 @@ const recentListings = [
     location: 'Science Building',
     timeAgo: '3 hours ago',
     rating: 4.0,
-    isFavorite: false
+    isFavorite: false,
+    category: 'Books'
   },
   {
     id: 8,
@@ -105,7 +108,8 @@ const recentListings = [
     location: 'South Apartments',
     timeAgo: '6 hours ago',
     rating: 4.8,
-    isFavorite: false
+    isFavorite: false,
+    category: 'Electronics'
   },
   {
     id: 9,
@@ -117,7 +121,8 @@ const recentListings = [
     location: 'Music Building',
     timeAgo: '12 hours ago',
     rating: 4.5,
-    isFavorite: true
+    isFavorite: true,
+    category: 'Entertainment'
   },
   {
     id: 10,
@@ -129,27 +134,58 @@ const recentListings = [
     location: 'West Residence',
     timeAgo: '1 day ago',
     rating: 4.3,
-    isFavorite: false
+    isFavorite: false,
+    category: 'Furniture'
   }
 ];
 
 const Home = () => {
+  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [filteredTrending, setFilteredTrending] = useState([]);
+  const [filteredRecent, setFilteredRecent] = useState([]);
+
+  // Get trending and recent products
+  const trendingProducts = allProducts.slice(0, 5);
+  const recentListings = allProducts.slice(5, 10);
+
+  // Filter products when category changes
+  useEffect(() => {
+    if (selectedCategory === 'All') {
+      setFilteredTrending(trendingProducts);
+      setFilteredRecent(recentListings);
+    } else {
+      setFilteredTrending(trendingProducts.filter(product => product.category === selectedCategory));
+      setFilteredRecent(recentListings.filter(product => product.category === selectedCategory));
+    }
+  }, [selectedCategory]);
+
+  // Handle category change
+  const handleCategoryChange = (category) => {
+    setSelectedCategory(category);
+  };
+
   return (
     <Layout>
       <HeroBanner />
       
+      <div className="container mx-auto px-4 py-4">
+        <Categories onCategoryChange={handleCategoryChange} />
+      </div>
+      
       <div id="trending">
         <ProductSection 
-          title="Trending Now" 
+          title={`${selectedCategory === 'All' ? 'Trending Now' : selectedCategory + ' Trending'}`}
           viewAllLink="/category/trending" 
-          products={trendingProducts} 
+          products={filteredTrending} 
+          emptyMessage={`No trending ${selectedCategory.toLowerCase()} items available`}
         />
       </div>
       
       <ProductSection 
-        title="Recent Listings" 
+        title={`${selectedCategory === 'All' ? 'Recent Listings' : selectedCategory + ' Listings'}`}
         viewAllLink="/category/recent" 
-        products={recentListings} 
+        products={filteredRecent} 
+        emptyMessage={`No recent ${selectedCategory.toLowerCase()} listings available`}
       />
       
       <section className="py-10 bg-gray-50">

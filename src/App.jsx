@@ -3,10 +3,11 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { lazy, Suspense } from "react";
 import LoadingScreen from "./components/LoadingScreen";
 import { FavoritesProvider } from "./context/FavoritesContext";
+import { AuthProvider, RequireAuth } from "./context/AuthContext";
 
 // Lazy load pages for better performance
 const Home = lazy(() => import("./pages/Home"));
@@ -15,28 +16,78 @@ const Profile = lazy(() => import("./pages/Profile"));
 const SellItem = lazy(() => import("./pages/SellItem"));
 const Favorites = lazy(() => import("./pages/Favorites"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const Notifications = lazy(() => import("./pages/Notifications"));
+const SignIn = lazy(() => import("./pages/SignIn"));
+const SignUp = lazy(() => import("./pages/SignUp"));
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <FavoritesProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Suspense fallback={<LoadingScreen />}>
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/product/:id" element={<ProductDetail />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/sell" element={<SellItem />} />
-              <Route path="/favorites" element={<Favorites />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </Suspense>
-        </BrowserRouter>
-      </FavoritesProvider>
+      <BrowserRouter>
+        <AuthProvider>
+          <FavoritesProvider>
+            <Toaster />
+            <Sonner />
+            <Suspense fallback={<LoadingScreen />}>
+              <Routes>
+                <Route 
+                  path="/" 
+                  element={
+                    <RequireAuth>
+                      <Home />
+                    </RequireAuth>
+                  } 
+                />
+                <Route 
+                  path="/product/:id" 
+                  element={
+                    <RequireAuth>
+                      <ProductDetail />
+                    </RequireAuth>
+                  } 
+                />
+                <Route 
+                  path="/profile" 
+                  element={
+                    <RequireAuth>
+                      <Profile />
+                    </RequireAuth>
+                  } 
+                />
+                <Route 
+                  path="/sell" 
+                  element={
+                    <RequireAuth>
+                      <SellItem />
+                    </RequireAuth>
+                  } 
+                />
+                <Route 
+                  path="/favorites" 
+                  element={
+                    <RequireAuth>
+                      <Favorites />
+                    </RequireAuth>
+                  } 
+                />
+                <Route 
+                  path="/notifications" 
+                  element={
+                    <RequireAuth>
+                      <Notifications />
+                    </RequireAuth>
+                  } 
+                />
+                <Route path="/signin" element={<SignIn />} />
+                <Route path="/signup" element={<SignUp />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Suspense>
+          </FavoritesProvider>
+        </AuthProvider>
+      </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
 );

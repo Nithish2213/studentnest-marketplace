@@ -3,58 +3,7 @@ import React, { useState, useEffect } from 'react';
 import Layout from '../components/layout/Layout';
 import ProductCard from '../components/products/ProductCard';
 import { Heart, Filter, ChevronDown } from 'lucide-react';
-
-// Mock favorites data
-const favoritesData = [
-  {
-    id: 2,
-    title: 'Calculus Textbook 5th Edition',
-    description: 'No highlights or notes',
-    price: 45,
-    image: 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=687&q=80',
-    condition: 'Good',
-    location: 'Library',
-    timeAgo: '5 hours ago',
-    rating: 4.7,
-    isFavorite: true
-  },
-  {
-    id: 9,
-    title: 'Acoustic Guitar',
-    description: 'Great for beginners',
-    price: 150,
-    image: 'https://images.unsplash.com/photo-1558098329-a11cff621064?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1036&q=80',
-    condition: 'Good',
-    location: 'Music Building',
-    timeAgo: '12 hours ago',
-    rating: 4.5,
-    isFavorite: true
-  },
-  {
-    id: 12,
-    title: 'Desk Organizer Set',
-    description: 'Keep your study space tidy',
-    price: 25,
-    image: 'https://images.unsplash.com/photo-1591637333184-19aa84b3e01f?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=687&q=80',
-    condition: 'New',
-    location: 'Student Center',
-    timeAgo: '2 days ago',
-    rating: 4.8,
-    isFavorite: true
-  },
-  {
-    id: 15,
-    title: 'Wireless Earbuds',
-    description: 'Great sound quality',
-    price: 65,
-    image: 'https://images.unsplash.com/photo-1572569511254-d8f925fe2cbb?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1378&q=80',
-    condition: 'Like New',
-    location: 'Engineering Building',
-    timeAgo: '3 days ago',
-    rating: 4.6,
-    isFavorite: true
-  }
-];
+import { useFavorites } from '../context/FavoritesContext';
 
 const sortOptions = [
   { value: 'recent', label: 'Recently Added' },
@@ -65,27 +14,17 @@ const sortOptions = [
 ];
 
 const Favorites = () => {
-  const [favorites, setFavorites] = useState([]);
+  const { favorites } = useFavorites();
+  const [displayFavorites, setDisplayFavorites] = useState([]);
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState('recent');
   const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
-    // Simulate API call to fetch favorites
-    setTimeout(() => {
-      setFavorites(favoritesData);
-      setLoading(false);
-    }, 800);
-  }, []);
-
-  const handleSortChange = (e) => {
-    const value = e.target.value;
-    setSortBy(value);
-    
-    // Sort the favorites based on selection
+    // Sort favorites based on current sort selection
     const sortedFavorites = [...favorites];
     
-    switch (value) {
+    switch (sortBy) {
       case 'price-low':
         sortedFavorites.sort((a, b) => a.price - b.price);
         break;
@@ -104,15 +43,16 @@ const Favorites = () => {
         break;
     }
     
-    setFavorites(sortedFavorites);
+    setDisplayFavorites(sortedFavorites);
+    setLoading(false);
+  }, [favorites, sortBy]);
+
+  const handleSortChange = (e) => {
+    setSortBy(e.target.value);
   };
 
   const toggleFilters = () => {
     setShowFilters(!showFilters);
-  };
-
-  const handleRemoveFavorite = (id) => {
-    setFavorites(favorites.filter(item => item.id !== id));
   };
 
   return (
@@ -223,9 +163,9 @@ const Favorites = () => {
               </div>
             ))}
           </div>
-        ) : favorites.length > 0 ? (
+        ) : displayFavorites.length > 0 ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
-            {favorites.map((product) => (
+            {displayFavorites.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
           </div>

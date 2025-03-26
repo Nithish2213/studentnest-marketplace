@@ -1,7 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Layout from '../components/layout/Layout';
+import { useFavorites } from '../context/FavoritesContext';
 import { 
   Heart, 
   Share2, 
@@ -17,7 +17,6 @@ import {
   UserCircle
 } from 'lucide-react';
 
-// Mock product data
 const productData = {
   id: 1,
   title: 'MacBook Pro 2019 - 16" - i7 - 16GB - 512GB',
@@ -54,19 +53,17 @@ const ProductDetail = () => {
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeImage, setActiveImage] = useState(0);
-  const [isFavorite, setIsFavorite] = useState(false);
+  const { toggleFavorite, isFavorite } = useFavorites();
 
   useEffect(() => {
-    // In a real app, this would fetch product by ID from an API
-    // For demo purposes, we'll use our mock data
     setProduct(productData);
-    setIsFavorite(productData.isFavorite);
     setLoading(false);
   }, [id]);
 
-  const toggleFavorite = () => {
-    setIsFavorite(!isFavorite);
-    // In a real app, this would make an API call to save the favorite status
+  const toggleProductFavorite = () => {
+    if (product) {
+      toggleFavorite(product);
+    }
   };
 
   const nextImage = () => {
@@ -115,10 +112,11 @@ const ProductDetail = () => {
     );
   }
 
+  const productIsFavorite = isFavorite(parseInt(id));
+
   return (
     <Layout showCategories={false}>
       <div className="container mx-auto px-4 py-6">
-        {/* Breadcrumb navigation */}
         <div className="mb-6">
           <Link to="/" className="flex items-center text-marketplace-400 hover:text-marketplace-accent text-sm transition duration-200">
             <ArrowLeft size={16} className="mr-2" /> Back to listings
@@ -126,7 +124,6 @@ const ProductDetail = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Product Images */}
           <div className="space-y-4">
             <div className="relative rounded-xl overflow-hidden aspect-square bg-gray-100">
               <img 
@@ -135,7 +132,6 @@ const ProductDetail = () => {
                 className="w-full h-full object-cover animate-fade-in"
               />
               
-              {/* Image Navigation Controls */}
               {product.images.length > 1 && (
                 <>
                   <button 
@@ -156,7 +152,6 @@ const ProductDetail = () => {
               )}
             </div>
             
-            {/* Thumbnail Gallery */}
             {product.images.length > 1 && (
               <div className="flex space-x-2 overflow-x-auto pb-1">
                 {product.images.map((image, index) => (
@@ -174,7 +169,6 @@ const ProductDetail = () => {
             )}
           </div>
 
-          {/* Product Information */}
           <div className="space-y-6">
             <div>
               <div className="flex items-start justify-between">
@@ -183,13 +177,13 @@ const ProductDetail = () => {
                 </h1>
                 <div className="flex items-center space-x-2">
                   <button 
-                    onClick={toggleFavorite}
+                    onClick={toggleProductFavorite}
                     className={`p-2 rounded-full transition duration-200 ${
-                      isFavorite ? 'text-red-500' : 'text-gray-400 hover:text-gray-600'
+                      productIsFavorite ? 'text-red-500' : 'text-gray-400 hover:text-gray-600'
                     }`}
-                    aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
+                    aria-label={productIsFavorite ? "Remove from favorites" : "Add to favorites"}
                   >
-                    <Heart size={22} fill={isFavorite ? "currentColor" : "none"} />
+                    <Heart size={22} fill={productIsFavorite ? "currentColor" : "none"} />
                   </button>
                   <button 
                     className="p-2 rounded-full text-gray-400 hover:text-gray-600 transition duration-200"
@@ -203,7 +197,6 @@ const ProductDetail = () => {
                 ${product.price.toFixed(2)}
               </p>
               
-              {/* Product Meta Information */}
               <div className="flex flex-wrap items-center text-sm text-marketplace-400 mt-3 gap-3">
                 <div className="flex items-center">
                   <MapPin size={14} className="mr-1" />
@@ -220,7 +213,6 @@ const ProductDetail = () => {
               </div>
             </div>
             
-            {/* Description */}
             <div>
               <h2 className="text-lg font-semibold text-marketplace-600 mb-2">Description</h2>
               <p className="text-marketplace-500 whitespace-pre-line">
@@ -228,7 +220,6 @@ const ProductDetail = () => {
               </p>
             </div>
             
-            {/* Seller Information */}
             <div className="border border-gray-200 rounded-xl p-4 bg-gray-50">
               <div className="flex items-center mb-3">
                 <div className="flex-shrink-0">
@@ -272,7 +263,6 @@ const ProductDetail = () => {
               </div>
             </div>
             
-            {/* Safety Tips */}
             <div className="rounded-xl p-4 border border-amber-200 bg-amber-50">
               <div className="flex items-start">
                 <AlertTriangle size={20} className="flex-shrink-0 text-amber-500 mt-0.5 mr-3" />

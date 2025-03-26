@@ -2,16 +2,17 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Heart, Star } from 'lucide-react';
+import { useFavorites } from '../../context/FavoritesContext';
 
 const ProductCard = ({ product }) => {
-  const [isFavorite, setIsFavorite] = useState(product.isFavorite || false);
   const [isImageLoaded, setIsImageLoaded] = useState(false);
+  const { toggleFavorite, isFavorite } = useFavorites();
+  const productIsFavorite = isFavorite(product.id);
 
-  const toggleFavorite = (e) => {
+  const handleToggleFavorite = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    setIsFavorite(!isFavorite);
-    // In a real app, this would make an API call to save the favorite status
+    toggleFavorite(product);
   };
 
   return (
@@ -27,13 +28,13 @@ const ProductCard = ({ product }) => {
           onLoad={() => setIsImageLoaded(true)}
         />
         <button
-          onClick={toggleFavorite}
+          onClick={handleToggleFavorite}
           className={`absolute top-3 right-3 p-2 rounded-full bg-white/70 backdrop-blur-sm shadow-sm transition-colors duration-200 ${
-            isFavorite ? 'text-red-500' : 'text-gray-400 hover:text-gray-600'
+            productIsFavorite ? 'text-red-500' : 'text-gray-400 hover:text-gray-600'
           }`}
-          aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
+          aria-label={productIsFavorite ? "Remove from favorites" : "Add to favorites"}
         >
-          <Heart size={18} fill={isFavorite ? "currentColor" : "none"} />
+          <Heart size={18} fill={productIsFavorite ? "currentColor" : "none"} />
         </button>
         {product.condition && (
           <span className="absolute top-3 left-3 text-xs font-medium px-2 py-1 rounded-md bg-white/70 backdrop-blur-sm text-marketplace-600">

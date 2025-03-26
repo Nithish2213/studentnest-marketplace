@@ -2,12 +2,14 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Search, Bell, Heart, UserCircle, ShoppingBag, Menu, X } from 'lucide-react';
+import { useFavorites } from '../../context/FavoritesContext';
 
 const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
+  const { getFavoritesCount } = useFavorites();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -31,6 +33,8 @@ const Header = () => {
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
+
+  const favoritesCount = getFavoritesCount();
 
   return (
     <header 
@@ -70,8 +74,13 @@ const Header = () => {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-5">
-            <Link to="/favorites" className="text-marketplace-500 hover:text-marketplace-accent transition duration-200" aria-label="Favorites">
+            <Link to="/favorites" className="text-marketplace-500 hover:text-marketplace-accent transition duration-200 relative" aria-label="Favorites">
               <Heart size={22} />
+              {favoritesCount > 0 && (
+                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                  {favoritesCount}
+                </span>
+              )}
             </Link>
             <button className="text-marketplace-500 hover:text-marketplace-accent transition duration-200" aria-label="Notifications">
               <Bell size={22} />
@@ -127,7 +136,13 @@ const Header = () => {
               className="flex items-center py-2.5 text-marketplace-500 hover:text-marketplace-accent"
               onClick={() => setIsMobileMenuOpen(false)}
             >
-              <Heart size={18} className="mr-3" /> Favorites
+              <Heart size={18} className="mr-3" /> 
+              Favorites
+              {favoritesCount > 0 && (
+                <span className="ml-2 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                  {favoritesCount}
+                </span>
+              )}
             </Link>
             <Link 
               to="/" 

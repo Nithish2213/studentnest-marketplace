@@ -19,6 +19,8 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 const Notifications = lazy(() => import("./pages/Notifications"));
 const SignIn = lazy(() => import("./pages/SignIn"));
 const SignUp = lazy(() => import("./pages/SignUp"));
+const ChatWithSeller = lazy(() => import("./pages/ChatWithSeller"));
+const SellerProfile = lazy(() => import("./pages/SellerProfile"));
 
 const queryClient = new QueryClient();
 
@@ -77,6 +79,22 @@ const App = () => (
                   element={
                     <RequireAuth>
                       <Notifications />
+                    </RequireAuth>
+                  } 
+                />
+                <Route 
+                  path="/chat/:sellerId/product/:productId" 
+                  element={
+                    <RequireAuth>
+                      <ChatWithSeller />
+                    </RequireAuth>
+                  } 
+                />
+                <Route 
+                  path="/seller/:sellerId" 
+                  element={
+                    <RequireAuth>
+                      <SellerProfile />
                     </RequireAuth>
                   } 
                 />

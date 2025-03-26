@@ -1,12 +1,12 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Layout from '../components/layout/Layout';
 import HeroBanner from '../components/home/HeroBanner';
 import ProductSection from '../components/products/ProductSection';
+import Categories from '../components/categories/Categories';
 
 // Mock data for trending products
-const allProducts = [
+const initialProducts = [
   {
     id: 1,
     title: 'MacBook Pro 2019',
@@ -143,21 +143,44 @@ const Home = () => {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [filteredTrending, setFilteredTrending] = useState([]);
   const [filteredRecent, setFilteredRecent] = useState([]);
+  const [allProducts, setAllProducts] = useState([]);
+
+  // Load products from localStorage and combine with initial products
+  useEffect(() => {
+    const storedProducts = JSON.parse(localStorage.getItem('products') || '[]');
+    // Combine stored products with initial products, avoiding duplicates by ID
+    const combinedProducts = [...storedProducts];
+    
+    initialProducts.forEach(product => {
+      if (!combinedProducts.some(p => p.id === product.id)) {
+        combinedProducts.push(product);
+      }
+    });
+    
+    setAllProducts(combinedProducts);
+  }, []);
 
   // Get trending and recent products
-  const trendingProducts = allProducts.slice(0, 5);
-  const recentListings = allProducts.slice(5, 10);
-
-  // Filter products when category changes
   useEffect(() => {
-    if (selectedCategory === 'All') {
-      setFilteredTrending(trendingProducts);
-      setFilteredRecent(recentListings);
-    } else {
-      setFilteredTrending(trendingProducts.filter(product => product.category === selectedCategory));
-      setFilteredRecent(recentListings.filter(product => product.category === selectedCategory));
+    if (allProducts.length > 0) {
+      const trending = allProducts.slice(0, 5);
+      const recent = allProducts.slice(5, 10);
+      
+      if (selectedCategory === 'All') {
+        setFilteredTrending(trending);
+        setFilteredRecent(recent);
+      } else {
+        setFilteredTrending(trending.filter(product => 
+          product.category === selectedCategory ||
+          product.category?.toLowerCase() === selectedCategory.toLowerCase()
+        ));
+        setFilteredRecent(recent.filter(product => 
+          product.category === selectedCategory ||
+          product.category?.toLowerCase() === selectedCategory.toLowerCase()
+        ));
+      }
     }
-  }, [selectedCategory]);
+  }, [selectedCategory, allProducts]);
 
   // Handle category change
   const handleCategoryChange = (category) => {

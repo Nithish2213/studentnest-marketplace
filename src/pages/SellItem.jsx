@@ -2,56 +2,73 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/layout/Layout';
-import { Upload, Plus, Minus, X, Camera, Info, AlertTriangle } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { Camera, X, Upload, Check } from 'lucide-react';
+import { useToast } from "@/components/ui/use-toast";
 
+// Import the categories used in the application
 const categories = [
-  'Books',
-  'Electronics',
-  'Furniture',
-  'Clothing',
-  'Accessories',
-  'Sports',
-  'Transportation',
-  'Services',
-  'Tickets',
-  'Housing',
-  'Entertainment',
-  'Tutoring',
-  'Other'
+  { value: 'electronics', label: 'Electronics' },
+  { value: 'books', label: 'Books' },
+  { value: 'furniture', label: 'Furniture' },
+  { value: 'clothing', label: 'Clothing' },
+  { value: 'transportation', label: 'Transportation' },
+  { value: 'entertainment', label: 'Entertainment' },
+  { value: 'services', label: 'Services' },
+  { value: 'other', label: 'Other' }
 ];
 
+// Import the locations used in the application
+const locations = [
+  'West Campus',
+  'East Campus',
+  'North Campus',
+  'South Campus',
+  'Library',
+  'Engineering Building',
+  'Science Building',
+  'Arts Building',
+  'Recreation Center',
+  'Student Center',
+  'Off Campus'
+];
+
+// Import the conditions used in the application
 const conditions = [
-  'New',
-  'Like New',
-  'Good',
-  'Fair',
-  'Poor'
+  { value: 'new', label: 'New' },
+  { value: 'like_new', label: 'Like New' },
+  { value: 'good', label: 'Good' },
+  { value: 'fair', label: 'Fair' },
+  { value: 'poor', label: 'Poor' }
 ];
 
 const SellItem = () => {
   const navigate = useNavigate();
-  const [form, setForm] = useState({
+  const { currentUser } = useAuth();
+  const { toast } = useToast();
+  
+  const [formData, setFormData] = useState({
     title: '',
+    description: '',
+    price: '',
     category: '',
     condition: '',
-    price: '',
-    description: '',
     location: '',
     images: []
   });
-  const [previewImages, setPreviewImages] = useState([]);
+  
   const [errors, setErrors] = useState({});
+  const [imageFiles, setImageFiles] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleInputChange = (e) => {
+  const handleChange = (e) => {
     const { name, value } = e.target;
-    
-    setForm({
-      ...form,
+    setFormData({
+      ...formData,
       [name]: value
     });
     
-    // Clear error when field is modified
+    // Clear error when field is edited
     if (errors[name]) {
       setErrors({
         ...errors,
@@ -60,12 +77,11 @@ const SellItem = () => {
     }
   };
 
-  const handleImageChange = (e) => {
+  const handleImageUpload = (e) => {
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
     
-    // Limit to 5 images total
-    if (previewImages.length + files.length > 5) {
+    if (imageFiles.length + files.length > 5) {
       setErrors({
         ...errors,
         images: 'Maximum 5 images allowed'
@@ -73,37 +89,36 @@ const SellItem = () => {
       return;
     }
     
-    const newPreviewImages = [...previewImages];
+    const newImageFiles = [...imageFiles];
     
     files.forEach(file => {
+      // Only allow image files
+      if (!file.type.includes('image/')) {
+        setErrors({
+          ...errors,
+          images: 'Only image files are allowed'
+        });
+        return;
+      }
+      
       const reader = new FileReader();
       reader.onload = (e) => {
-        newPreviewImages.push(e.target.result);
-        setPreviewImages([...newPreviewImages]);
+        newImageFiles.push({
+          file,
+          preview: e.target.result
+        });
+        setImageFiles([...newImageFiles]);
       };
       reader.readAsDataURL(file);
     });
     
-    setForm({
-      ...form,
-      images: [...form.images, ...files]
-    });
-  };
-
-  const removeImage = (index) => {
-    const newPreviewImages = [...previewImages];
-    newPreviewImages.splice(index, 1);
-    
-    const newImages = [...form.images];
-    newImages.splice(index, 1);
-    
-    setPreviewImages(newPreviewImages);
-    setForm({
-      ...form,
-      images: newImages
+    // Update form data with the image files
+    setFormData({
+      ...formData,
+      images: [...formData.images, ...files]
     });
     
-    // Clear image error if any
+    // Clear error when images are added
     if (errors.images) {
       setErrors({
         ...errors,
@@ -112,281 +127,334 @@ const SellItem = () => {
     }
   };
 
-  const validate = () => {
+  const removeImage = (index) => {
+    const newImageFiles = [...imageFiles];
+    newImageFiles.splice(index, 1);
+    setImageFiles(newImageFiles);
+    
+    const newImages = [...formData.images];
+    newImages.splice(index, 1);
+    setFormData({
+      ...formData,
+      images: newImages
+    });
+  };
+
+  const validateForm = () => {
     const newErrors = {};
     
-    if (!form.title.trim()) newErrors.title = 'Title is required';
-    if (!form.category) newErrors.category = 'Category is required';
-    if (!form.condition) newErrors.condition = 'Condition is required';
-    if (!form.price) newErrors.price = 'Price is required';
-    else if (isNaN(form.price) || Number(form.price) <= 0) newErrors.price = 'Valid price is required';
-    if (!form.description.trim()) newErrors.description = 'Description is required';
-    if (!form.location.trim()) newErrors.location = 'Location is required';
-    if (form.images.length === 0) newErrors.images = 'At least one image is required';
+    if (!formData.title.trim()) {
+      newErrors.title = 'Title is required';
+    } else if (formData.title.length < 5) {
+      newErrors.title = 'Title must be at least 5 characters';
+    }
+    
+    if (!formData.description.trim()) {
+      newErrors.description = 'Description is required';
+    } else if (formData.description.length < 20) {
+      newErrors.description = 'Description must be at least 20 characters';
+    }
+    
+    if (!formData.price) {
+      newErrors.price = 'Price is required';
+    } else if (isNaN(parseFloat(formData.price)) || parseFloat(formData.price) <= 0) {
+      newErrors.price = 'Price must be a positive number';
+    }
+    
+    if (!formData.category) {
+      newErrors.category = 'Category is required';
+    }
+    
+    if (!formData.condition) {
+      newErrors.condition = 'Condition is required';
+    }
+    
+    if (!formData.location) {
+      newErrors.location = 'Location is required';
+    }
+    
+    if (formData.images.length === 0) {
+      newErrors.images = 'At least one image is required';
+    }
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!validate()) return;
+    if (!validateForm()) {
+      // Scroll to the first error
+      const firstError = document.querySelector('.error-message');
+      if (firstError) {
+        firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      return;
+    }
     
     setIsSubmitting(true);
     
-    // Simulate form submission
-    setTimeout(() => {
-      console.log('Form submitted:', form);
-      setIsSubmitting(false);
+    try {
+      // In a real app, you would upload the images to a server and get URLs
+      // For this example, we'll use the preview URLs directly
+      const imageUrls = imageFiles.map(img => img.preview);
       
-      // In a real app, this would redirect after API success
-      navigate('/profile');
-    }, 1500);
+      // Create a new product object
+      const newProduct = {
+        id: Date.now(), // Generate a temporary ID
+        title: formData.title,
+        description: formData.description,
+        price: parseFloat(formData.price),
+        image: imageUrls[0], // Use the first image as the main image
+        images: imageUrls, // Store all images
+        condition: conditions.find(c => c.value === formData.condition)?.label || formData.condition,
+        category: formData.category,
+        location: formData.location,
+        timeAgo: 'Just now',
+        rating: 0,
+        seller: {
+          id: currentUser?.id || 'user123',
+          name: currentUser?.name || 'Current User',
+          avatar: currentUser?.avatar || null
+        }
+      };
+      
+      console.log('New product created:', newProduct);
+      
+      // In a real app, you would send this data to a server
+      // For now, let's store it in localStorage to simulate persistence
+      const storedProducts = JSON.parse(localStorage.getItem('products') || '[]');
+      localStorage.setItem('products', JSON.stringify([newProduct, ...storedProducts]));
+      
+      // Show success toast
+      toast({
+        title: "Listing created!",
+        description: "Your item has been listed successfully",
+        variant: "success",
+      });
+      
+      // Redirect to home page
+      navigate('/');
+    } catch (error) {
+      console.error('Error creating listing:', error);
+      setErrors({
+        ...errors,
+        submit: 'Failed to create listing. Please try again.'
+      });
+      setIsSubmitting(false);
+    }
   };
 
   return (
     <Layout showCategories={false}>
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-3xl mx-auto">
-          <h1 className="text-2xl md:text-3xl font-display font-semibold text-marketplace-600 mb-6">
-            Create a Listing
-          </h1>
-          
-          {/* Info Box */}
-          <div className="glass-card p-4 flex items-start mb-8">
-            <Info size={20} className="text-marketplace-accent flex-shrink-0 mt-0.5 mr-3" />
-            <div className="text-sm text-marketplace-500">
-              <strong className="text-marketplace-600">Sell faster with a great listing!</strong>
-              <p className="mt-1">Be detailed, honest, and clear. Add high-quality photos and set a fair price. Respond promptly to potential buyers.</p>
+      <div className="container mx-auto px-4 py-8 max-w-4xl">
+        <h1 className="text-2xl md:text-3xl font-display font-semibold text-marketplace-600 mb-6">
+          Create a New Listing
+        </h1>
+        
+        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+          <form onSubmit={handleSubmit} className="p-6 space-y-6">
+            {errors.submit && (
+              <div className="p-4 mb-4 text-red-700 bg-red-100 rounded-lg">
+                {errors.submit}
+              </div>
+            )}
+            
+            {/* Title */}
+            <div>
+              <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
+                Title <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                id="title"
+                name="title"
+                value={formData.title}
+                onChange={handleChange}
+                placeholder="e.g., MacBook Pro 2019 - 16 inch"
+                className={`w-full p-3 border ${errors.title ? 'border-red-300' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-marketplace-accent/20 focus:border-marketplace-accent`}
+              />
+              {errors.title && <p className="mt-1 text-sm text-red-600 error-message">{errors.title}</p>}
             </div>
-          </div>
-          
-          <form onSubmit={handleSubmit} className="space-y-8">
-            {/* Images Upload Section */}
-            <div className="glass-card p-6">
-              <h2 className="text-lg font-semibold text-marketplace-600 mb-4">Photos</h2>
-              <p className="text-sm text-marketplace-400 mb-4">Add up to 5 photos. The first photo will be your listing's cover image.</p>
+            
+            {/* Description */}
+            <div>
+              <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
+                Description <span className="text-red-500">*</span>
+              </label>
+              <textarea
+                id="description"
+                name="description"
+                value={formData.description}
+                onChange={handleChange}
+                rows={5}
+                placeholder="Describe your item in detail. Include condition, features, and reason for selling."
+                className={`w-full p-3 border ${errors.description ? 'border-red-300' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-marketplace-accent/20 focus:border-marketplace-accent`}
+              ></textarea>
+              {errors.description && <p className="mt-1 text-sm text-red-600 error-message">{errors.description}</p>}
+            </div>
+            
+            {/* Price */}
+            <div>
+              <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-1">
+                Price <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <span className="text-gray-500">$</span>
+                </div>
+                <input
+                  type="text"
+                  id="price"
+                  name="price"
+                  value={formData.price}
+                  onChange={handleChange}
+                  placeholder="0.00"
+                  className={`w-full pl-8 p-3 border ${errors.price ? 'border-red-300' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-marketplace-accent/20 focus:border-marketplace-accent`}
+                />
+              </div>
+              {errors.price && <p className="mt-1 text-sm text-red-600 error-message">{errors.price}</p>}
+            </div>
+            
+            {/* Category and Condition */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
+                  Category <span className="text-red-500">*</span>
+                </label>
+                <select
+                  id="category"
+                  name="category"
+                  value={formData.category}
+                  onChange={handleChange}
+                  className={`w-full p-3 border ${errors.category ? 'border-red-300' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-marketplace-accent/20 focus:border-marketplace-accent`}
+                >
+                  <option value="">Select a category</option>
+                  {categories.map(category => (
+                    <option key={category.value} value={category.value}>
+                      {category.label}
+                    </option>
+                  ))}
+                </select>
+                {errors.category && <p className="mt-1 text-sm text-red-600 error-message">{errors.category}</p>}
+              </div>
               
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 mb-3">
-                {/* Image Previews */}
-                {previewImages.map((src, index) => (
-                  <div key={index} className="aspect-square relative rounded-lg overflow-hidden border border-gray-200 bg-gray-50">
-                    <img src={src} alt={`Preview ${index + 1}`} className="w-full h-full object-cover" />
+              <div>
+                <label htmlFor="condition" className="block text-sm font-medium text-gray-700 mb-1">
+                  Condition <span className="text-red-500">*</span>
+                </label>
+                <select
+                  id="condition"
+                  name="condition"
+                  value={formData.condition}
+                  onChange={handleChange}
+                  className={`w-full p-3 border ${errors.condition ? 'border-red-300' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-marketplace-accent/20 focus:border-marketplace-accent`}
+                >
+                  <option value="">Select condition</option>
+                  {conditions.map(condition => (
+                    <option key={condition.value} value={condition.value}>
+                      {condition.label}
+                    </option>
+                  ))}
+                </select>
+                {errors.condition && <p className="mt-1 text-sm text-red-600 error-message">{errors.condition}</p>}
+              </div>
+            </div>
+            
+            {/* Location */}
+            <div>
+              <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-1">
+                Location <span className="text-red-500">*</span>
+              </label>
+              <select
+                id="location"
+                name="location"
+                value={formData.location}
+                onChange={handleChange}
+                className={`w-full p-3 border ${errors.location ? 'border-red-300' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-marketplace-accent/20 focus:border-marketplace-accent`}
+              >
+                <option value="">Select location</option>
+                {locations.map(location => (
+                  <option key={location} value={location}>
+                    {location}
+                  </option>
+                ))}
+              </select>
+              {errors.location && <p className="mt-1 text-sm text-red-600 error-message">{errors.location}</p>}
+            </div>
+            
+            {/* Images */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Images <span className="text-red-500">*</span>
+                <span className="text-gray-500 text-xs ml-2">(Up to 5 images, first one will be the main image)</span>
+              </label>
+              
+              <div className="mt-2 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+                {/* Image previews */}
+                {imageFiles.map((image, index) => (
+                  <div key={index} className="relative group aspect-square">
+                    <img 
+                      src={image.preview} 
+                      alt={`Preview ${index}`} 
+                      className="w-full h-full object-cover rounded-lg border border-gray-200"
+                    />
                     <button
                       type="button"
                       onClick={() => removeImage(index)}
-                      className="absolute top-1 right-1 p-1 rounded-full bg-white/80 text-gray-600 hover:text-red-500 transition duration-200"
-                      aria-label="Remove image"
+                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
                     >
                       <X size={16} />
                     </button>
                     {index === 0 && (
-                      <div className="absolute bottom-0 left-0 right-0 bg-marketplace-accent/80 text-white text-xs font-medium py-1 text-center">
-                        Cover
+                      <div className="absolute bottom-0 left-0 right-0 bg-marketplace-accent/80 text-white text-xs font-medium py-1 px-2 text-center">
+                        Main Image
                       </div>
                     )}
                   </div>
                 ))}
                 
-                {/* Upload Button */}
-                {previewImages.length < 5 && (
-                  <label className="aspect-square cursor-pointer border-2 border-dashed border-gray-200 rounded-lg flex flex-col items-center justify-center bg-gray-50 hover:bg-gray-100 transition duration-200">
+                {/* Upload button */}
+                {imageFiles.length < 5 && (
+                  <div className="aspect-square border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center text-gray-500 cursor-pointer hover:border-marketplace-accent/50 transition-colors">
                     <input
                       type="file"
-                      multiple
+                      id="images"
                       accept="image/*"
+                      multiple
+                      onChange={handleImageUpload}
                       className="hidden"
-                      onChange={handleImageChange}
                     />
-                    <div className="flex flex-col items-center text-marketplace-400">
+                    <label htmlFor="images" className="w-full h-full flex flex-col items-center justify-center cursor-pointer">
                       <Camera size={24} className="mb-2" />
-                      <span className="text-sm font-medium">Add Photo</span>
-                    </div>
-                  </label>
+                      <span className="text-sm">Add Image</span>
+                    </label>
+                  </div>
                 )}
               </div>
               
-              {errors.images && (
-                <p className="text-sm text-red-500 mt-2">{errors.images}</p>
-              )}
+              {errors.images && <p className="mt-1 text-sm text-red-600 error-message">{errors.images}</p>}
             </div>
             
-            {/* Basic Information */}
-            <div className="glass-card p-6">
-              <h2 className="text-lg font-semibold text-marketplace-600 mb-4">Item Details</h2>
-              
-              <div className="space-y-5">
-                {/* Title */}
-                <div>
-                  <label htmlFor="title" className="block text-sm font-medium text-marketplace-600 mb-1.5">
-                    Title <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    id="title"
-                    name="title"
-                    value={form.title}
-                    onChange={handleInputChange}
-                    placeholder="e.g., MacBook Pro 2019 - 16 inch"
-                    className={`input-field ${errors.title ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : ''}`}
-                  />
-                  {errors.title && (
-                    <p className="text-sm text-red-500 mt-1">{errors.title}</p>
-                  )}
-                </div>
-                
-                {/* Category and Condition */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  <div>
-                    <label htmlFor="category" className="block text-sm font-medium text-marketplace-600 mb-1.5">
-                      Category <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      id="category"
-                      name="category"
-                      value={form.category}
-                      onChange={handleInputChange}
-                      className={`input-field ${errors.category ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : ''}`}
-                    >
-                      <option value="">Select a category</option>
-                      {categories.map((category) => (
-                        <option key={category} value={category}>
-                          {category}
-                        </option>
-                      ))}
-                    </select>
-                    {errors.category && (
-                      <p className="text-sm text-red-500 mt-1">{errors.category}</p>
-                    )}
-                  </div>
-                  
-                  <div>
-                    <label htmlFor="condition" className="block text-sm font-medium text-marketplace-600 mb-1.5">
-                      Condition <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      id="condition"
-                      name="condition"
-                      value={form.condition}
-                      onChange={handleInputChange}
-                      className={`input-field ${errors.condition ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : ''}`}
-                    >
-                      <option value="">Select condition</option>
-                      {conditions.map((condition) => (
-                        <option key={condition} value={condition}>
-                          {condition}
-                        </option>
-                      ))}
-                    </select>
-                    {errors.condition && (
-                      <p className="text-sm text-red-500 mt-1">{errors.condition}</p>
-                    )}
-                  </div>
-                </div>
-                
-                {/* Price */}
-                <div>
-                  <label htmlFor="price" className="block text-sm font-medium text-marketplace-600 mb-1.5">
-                    Price ($) <span className="text-red-500">*</span>
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                      <span className="text-marketplace-400">$</span>
-                    </div>
-                    <input
-                      type="text"
-                      id="price"
-                      name="price"
-                      value={form.price}
-                      onChange={handleInputChange}
-                      placeholder="0.00"
-                      className={`input-field pl-8 ${errors.price ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : ''}`}
-                    />
-                  </div>
-                  {errors.price && (
-                    <p className="text-sm text-red-500 mt-1">{errors.price}</p>
-                  )}
-                </div>
-                
-                {/* Description */}
-                <div>
-                  <label htmlFor="description" className="block text-sm font-medium text-marketplace-600 mb-1.5">
-                    Description <span className="text-red-500">*</span>
-                  </label>
-                  <textarea
-                    id="description"
-                    name="description"
-                    value={form.description}
-                    onChange={handleInputChange}
-                    rows={5}
-                    placeholder="Describe your item (condition, features, why you're selling it)"
-                    className={`input-field ${errors.description ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : ''}`}
-                  />
-                  {errors.description && (
-                    <p className="text-sm text-red-500 mt-1">{errors.description}</p>
-                  )}
-                  <p className="text-sm text-marketplace-400 mt-1.5">
-                    {form.description.length}/2000 characters
-                  </p>
-                </div>
-                
-                {/* Location */}
-                <div>
-                  <label htmlFor="location" className="block text-sm font-medium text-marketplace-600 mb-1.5">
-                    Pickup Location <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    id="location"
-                    name="location"
-                    value={form.location}
-                    onChange={handleInputChange}
-                    placeholder="e.g., Library, West Campus, Engineering Building"
-                    className={`input-field ${errors.location ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : ''}`}
-                  />
-                  {errors.location && (
-                    <p className="text-sm text-red-500 mt-1">{errors.location}</p>
-                  )}
-                </div>
-              </div>
-            </div>
-            
-            {/* Safety Notice */}
-            <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
-              <div className="flex">
-                <AlertTriangle size={20} className="text-amber-500 flex-shrink-0 mt-0.5 mr-3" />
-                <div>
-                  <h3 className="text-sm font-medium text-marketplace-600">Safety Reminder</h3>
-                  <p className="text-xs text-marketplace-500 mt-1">
-                    By posting, you agree to our community guidelines. Always meet in public places and be cautious
-                    when sharing personal information.
-                  </p>
-                </div>
-              </div>
-            </div>
-            
-            {/* Submit Buttons */}
-            <div className="flex flex-col sm:flex-row gap-3 justify-end">
-              <button
-                type="button"
-                onClick={() => navigate('/')}
-                className="btn-secondary order-2 sm:order-1"
-              >
-                Cancel
-              </button>
+            <div className="pt-4 border-t border-gray-200">
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="btn-primary order-1 sm:order-2 flex justify-center items-center"
+                className={`w-full md:w-auto bg-marketplace-accent text-white py-3 px-6 rounded-lg shadow-sm font-medium flex items-center justify-center ${
+                  isSubmitting ? 'opacity-70 cursor-not-allowed' : 'hover:bg-marketplace-accent/90 transition-colors'
+                }`}
               >
                 {isSubmitting ? (
                   <>
-                    <div className="h-5 w-5 border-2 border-white/20 border-t-white rounded-full animate-spin mr-2"></div>
-                    Submitting...
+                    <Upload size={18} className="mr-2 animate-spin" />
+                    Creating Listing...
                   </>
                 ) : (
-                  'Create Listing'
+                  <>
+                    <Check size={18} className="mr-2" />
+                    Create Listing
+                  </>
                 )}
               </button>
             </div>

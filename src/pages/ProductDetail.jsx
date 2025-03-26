@@ -1,7 +1,9 @@
+
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import Layout from '../components/layout/Layout';
 import { useFavorites } from '../context/FavoritesContext';
+import { useToast } from "@/components/ui/use-toast";
 import { 
   Heart, 
   Share2, 
@@ -14,7 +16,9 @@ import {
   AlertTriangle,
   ChevronLeft,
   ChevronRight,
-  UserCircle
+  UserCircle,
+  Link as LinkIcon,
+  Copy
 } from 'lucide-react';
 
 const productData = {
@@ -50,10 +54,13 @@ const productData = {
 
 const ProductDetail = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeImage, setActiveImage] = useState(0);
+  const [showShareOptions, setShowShareOptions] = useState(false);
   const { toggleFavorite, isFavorite } = useFavorites();
+  const { toast } = useToast();
 
   useEffect(() => {
     setProduct(productData);
@@ -63,7 +70,55 @@ const ProductDetail = () => {
   const toggleProductFavorite = () => {
     if (product) {
       toggleFavorite(product);
+      toast({
+        title: isFavorite(parseInt(id)) ? "Removed from favorites" : "Added to favorites",
+        description: isFavorite(parseInt(id)) 
+          ? "This item has been removed from your favorites" 
+          : "This item has been added to your favorites",
+      });
     }
+  };
+
+  const handleShareClick = (e) => {
+    e.stopPropagation();
+    setShowShareOptions(!showShareOptions);
+  };
+
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(window.location.href);
+    toast({
+      title: "Link copied!",
+      description: "Product link has been copied to clipboard",
+    });
+    setShowShareOptions(false);
+  };
+
+  const shareToWhatsApp = () => {
+    const url = encodeURIComponent(window.location.href);
+    const text = encodeURIComponent(`Check out this product: ${product.title}`);
+    window.open(`https://wa.me/?text=${text}%20${url}`, '_blank');
+    setShowShareOptions(false);
+  };
+
+  const shareToFacebook = () => {
+    const url = encodeURIComponent(window.location.href);
+    window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, '_blank');
+    setShowShareOptions(false);
+  };
+
+  const shareToTwitter = () => {
+    const url = encodeURIComponent(window.location.href);
+    const text = encodeURIComponent(`Check out this product: ${product.title}`);
+    window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, '_blank');
+    setShowShareOptions(false);
+  };
+
+  const handleChatWithSeller = () => {
+    navigate(`/chat/${product.seller.id}/product/${id}`);
+  };
+
+  const handleViewSellerProfile = () => {
+    navigate(`/seller/${product.seller.id}`);
   };
 
   const nextImage = () => {
@@ -185,12 +240,49 @@ const ProductDetail = () => {
                   >
                     <Heart size={22} fill={productIsFavorite ? "currentColor" : "none"} />
                   </button>
-                  <button 
-                    className="p-2 rounded-full text-gray-400 hover:text-gray-600 transition duration-200"
-                    aria-label="Share this listing"
-                  >
-                    <Share2 size={22} />
-                  </button>
+                  <div className="relative">
+                    <button 
+                      onClick={handleShareClick}
+                      className="p-2 rounded-full text-gray-400 hover:text-gray-600 transition duration-200"
+                      aria-label="Share this listing"
+                    >
+                      <Share2 size={22} />
+                    </button>
+                    
+                    {/* Share options */}
+                    {showShareOptions && (
+                      <div className="absolute right-0 mt-2 bg-white rounded-md shadow-lg py-2 w-48 z-10 border border-gray-100">
+                        <button 
+                          onClick={copyToClipboard}
+                          className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        >
+                          <Copy size={16} className="mr-2 text-gray-500" />
+                          Copy Link
+                        </button>
+                        <button 
+                          onClick={shareToWhatsApp}
+                          className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        >
+                          <LinkIcon size={16} className="mr-2 text-gray-500" />
+                          Share to WhatsApp
+                        </button>
+                        <button 
+                          onClick={shareToFacebook}
+                          className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        >
+                          <LinkIcon size={16} className="mr-2 text-gray-500" />
+                          Share to Facebook
+                        </button>
+                        <button 
+                          onClick={shareToTwitter}
+                          className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        >
+                          <LinkIcon size={16} className="mr-2 text-gray-500" />
+                          Share to Twitter
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
               <p className="text-3xl font-display font-semibold text-marketplace-accent mt-2">
@@ -254,11 +346,17 @@ const ProductDetail = () => {
                 </div>
               </div>
               <div className="flex flex-col sm:flex-row gap-3">
-                <button className="btn-primary flex-1 flex justify-center items-center">
+                <button 
+                  onClick={handleChatWithSeller}
+                  className="btn-primary flex-1 flex justify-center items-center"
+                >
                   <MessageCircle size={18} className="mr-2" /> Chat with Seller
                 </button>
-                <button className="btn-secondary flex-1 flex justify-center items-center">
-                  Buy Now
+                <button 
+                  onClick={handleViewSellerProfile}
+                  className="btn-secondary flex-1 flex justify-center items-center"
+                >
+                  View Profile
                 </button>
               </div>
             </div>

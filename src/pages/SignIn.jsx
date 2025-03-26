@@ -1,7 +1,9 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { useToast } from "@/components/ui/use-toast";
 
 const SignIn = () => {
   const [email, setEmail] = useState('');
@@ -10,6 +12,15 @@ const SignIn = () => {
   const [userType, setUserType] = useState('student'); // 'student' or 'admin'
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const { signIn, isAuthenticated } = useAuth();
+  const { toast } = useToast();
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated()) {
+      navigate('/');
+    }
+  }, [isAuthenticated, navigate]);
 
   const validateEmail = (email) => {
     // Simple email validation
@@ -42,16 +53,22 @@ const SignIn = () => {
       return;
     }
     
-    // In a real app, we would make an API call to authenticate
-    // For this demo, we'll just redirect to home
-    console.log(`Logging in as ${userType} with email: ${email}`);
-    
-    // Store user information in localStorage
-    localStorage.setItem('user', JSON.stringify({
+    // Create user data
+    const userData = {
       email,
       type: userType,
       isAuthenticated: true
-    }));
+    };
+    
+    // Use the signIn function from AuthContext
+    signIn(userData);
+    
+    // Show success toast
+    toast({
+      title: "Sign in successful!",
+      description: "Welcome to StudentNest!",
+      variant: "success",
+    });
     
     // Redirect to home
     navigate('/');

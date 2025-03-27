@@ -1,7 +1,8 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Layout from '../components/layout/Layout';
+import { useAuth } from '../context/AuthContext';
 import { 
   User, 
   Settings, 
@@ -12,11 +13,15 @@ import {
   Star, 
   Edit, 
   ShoppingBag,
-  ChevronRight
+  ChevronRight,
+  Save,
+  X
 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { Textarea } from '@/components/ui/textarea';
 
-// Mock user data
-const userData = {
+// Default user data will be replaced by real data from context
+const defaultUserData = {
   id: 123,
   name: 'Alex Johnson',
   email: 'alex.johnson@university.edu',
@@ -36,48 +41,101 @@ const userData = {
   bio: 'Computer Science student interested in tech gadgets, books, and outdoor gear. Always looking for good deals on campus!'
 };
 
-// Mock active listings
-const activeListings = [
-  {
-    id: 1,
-    title: 'MacBook Pro 2019',
-    price: 1100,
-    image: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1026&q=80',
-    condition: 'Like New',
-    postedDate: '2023-06-15',
-    viewCount: 142,
-    messageCount: 8
-  },
-  {
-    id: 2,
-    title: 'Physics Textbook',
-    price: 45,
-    image: 'https://images.unsplash.com/photo-1592659762303-90081d34b277?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=773&q=80',
-    condition: 'Good',
-    postedDate: '2023-06-10',
-    viewCount: 57,
-    messageCount: 3
-  },
-  {
-    id: 3,
-    title: 'Desk Lamp',
-    price: 28,
-    image: 'https://images.unsplash.com/photo-1513506003901-1e6a229e2d15?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80',
-    condition: 'Like New',
-    postedDate: '2023-06-05',
-    viewCount: 89,
-    messageCount: 5
-  }
-];
-
 const Profile = () => {
   const [activeTab, setActiveTab] = useState('listings');
-  const user = userData; // In a real app, this would come from a user context or API
+  const { currentUser, signOut } = useAuth();
+  const { toast } = useToast();
+  const [userData, setUserData] = useState(null);
+  const [editMode, setEditMode] = useState(false);
+  const [editedBio, setEditedBio] = useState('');
+  const [activeListings, setActiveListings] = useState([]);
+  const [soldItems, setSoldItems] = useState([]);
+  const [purchasedItems, setPurchasedItems] = useState([]);
+  
+  // Load user data from localStorage or use default
+  useEffect(() => {
+    // Try to get user profile data from localStorage
+    const storedUserData = localStorage.getItem('userProfile');
+    let profileData;
+    
+    if (storedUserData) {
+      profileData = JSON.parse(storedUserData);
+    } else {
+      // Use currentUser data from auth context with default values as fallback
+      profileData = {
+        ...defaultUserData,
+        id: currentUser?.id || defaultUserData.id,
+        name: currentUser?.name || defaultUserData.name,
+        email: currentUser?.email || defaultUserData.email,
+        avatar: currentUser?.avatar || defaultUserData.avatar,
+        university: currentUser?.university || defaultUserData.university,
+        program: currentUser?.program || defaultUserData.program,
+        year: currentUser?.year || defaultUserData.year,
+        bio: currentUser?.bio || defaultUserData.bio,
+      };
+      
+      // Save to localStorage for future use
+      localStorage.setItem('userProfile', JSON.stringify(profileData));
+    }
+    
+    setUserData(profileData);
+    setEditedBio(profileData.bio || '');
+    
+    // Load products
+    const allProducts = JSON.parse(localStorage.getItem('products') || '[]');
+    
+    // Active listings are products created by this user
+    setActiveListings(allProducts.filter(product => 
+      product.seller && product.seller.id === profileData.id
+    ).slice(0, 3)); // Show only 3 items
+    
+    // For demo purposes, we'll use some of these as "sold" items
+    setSoldItems(allProducts.filter(product => 
+      product.seller && product.seller.id === profileData.id
+    ).slice(0, 2)); // First 2 items as "sold"
+    
+    // For demo purposes, use other products as "purchased" items
+    setPurchasedItems(allProducts.filter(product => 
+      !product.seller || product.seller.id !== profileData.id
+    ).slice(0, 2)); // Other items as "purchased"
+    
+  }, [currentUser]);
 
   const handleLogout = () => {
-    // In a real app, this would handle the logout process
-    console.log('Logout clicked');
+    signOut();
   };
+  
+  const startEditMode = () => {
+    setEditMode(true);
+    setEditedBio(userData.bio || '');
+  };
+  
+  const cancelEdit = () => {
+    setEditMode(false);
+  };
+  
+  const saveProfile = () => {
+    // Update user data
+    const updatedUserData = {
+      ...userData,
+      bio: editedBio
+    };
+    
+    // Save to localStorage
+    localStorage.setItem('userProfile', JSON.stringify(updatedUserData));
+    setUserData(updatedUserData);
+    setEditMode(false);
+    
+    toast({
+      title: "Profile updated",
+      description: "Your profile has been successfully updated",
+      variant: "success",
+    });
+  };
+
+  if (!userData) {
+    return <div className="flex items-center justify-center min-h-screen">Loading profile...</div>;
+  }
 
   return (
     <Layout showCategories={false}>
@@ -87,10 +145,10 @@ const Profile = () => {
           <div className="lg:col-span-1">
             <div className="glass-card p-6 mb-6">
               <div className="flex flex-col items-center text-center mb-6">
-                {user.avatar ? (
+                {userData.avatar ? (
                   <img 
-                    src={user.avatar} 
-                    alt={user.name} 
+                    src={userData.avatar} 
+                    alt={userData.name} 
                     className="w-24 h-24 rounded-full object-cover mb-4 border-4 border-white shadow-md"
                   />
                 ) : (
@@ -99,16 +157,16 @@ const Profile = () => {
                   </div>
                 )}
                 <h1 className="text-xl font-display font-semibold text-marketplace-600">
-                  {user.name}
+                  {userData.name}
                 </h1>
-                <p className="text-marketplace-400 text-sm mt-1">{user.university}</p>
+                <p className="text-marketplace-400 text-sm mt-1">{userData.university}</p>
                 
                 <div className="flex items-center mt-2">
                   <div className="flex items-center text-yellow-400">
                     <Star size={14} fill="currentColor" className="mr-1" />
-                    <span className="text-marketplace-500">{user.rating}</span>
+                    <span className="text-marketplace-500">{userData.rating}</span>
                   </div>
-                  {user.verified && (
+                  {userData.verified && (
                     <div className="ml-2 px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-700 rounded-full">
                       Verified
                     </div>
@@ -117,30 +175,61 @@ const Profile = () => {
               </div>
               
               <div className="space-y-3 mb-6">
-                <p className="text-sm text-marketplace-500">{user.bio}</p>
-                <div className="pt-3 border-t border-gray-100">
-                  <div className="flex justify-between text-sm mb-1.5">
-                    <span className="text-marketplace-400">Program:</span>
-                    <span className="text-marketplace-600 font-medium">{user.program}</span>
+                {editMode ? (
+                  <div className="space-y-3">
+                    <label htmlFor="bio" className="block text-sm font-medium text-marketplace-500">Biography</label>
+                    <Textarea
+                      id="bio"
+                      value={editedBio}
+                      onChange={(e) => setEditedBio(e.target.value)}
+                      placeholder="Tell us about yourself..."
+                      className="w-full min-h-[100px] border-gray-300 rounded-md shadow-sm focus:border-marketplace-accent focus:ring focus:ring-marketplace-accent/20"
+                    />
+                    <div className="flex space-x-2 mt-3">
+                      <button
+                        onClick={saveProfile}
+                        className="flex-1 btn-primary text-sm py-2 flex items-center justify-center"
+                      >
+                        <Save size={16} className="mr-1.5" /> Save
+                      </button>
+                      <button
+                        onClick={cancelEdit}
+                        className="flex-1 btn-secondary text-sm py-2 flex items-center justify-center"
+                      >
+                        <X size={16} className="mr-1.5" /> Cancel
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex justify-between text-sm mb-1.5">
-                    <span className="text-marketplace-400">Year:</span>
-                    <span className="text-marketplace-600 font-medium">{user.year}</span>
-                  </div>
-                  <div className="flex justify-between text-sm mb-1.5">
-                    <span className="text-marketplace-400">Member since:</span>
-                    <span className="text-marketplace-600 font-medium">{user.memberSince}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-marketplace-400">Response rate:</span>
-                    <span className="text-marketplace-600 font-medium">{user.responseRate}</span>
-                  </div>
-                </div>
+                ) : (
+                  <>
+                    <p className="text-sm text-marketplace-500">{userData.bio}</p>
+                    <div className="pt-3 border-t border-gray-100">
+                      <div className="flex justify-between text-sm mb-1.5">
+                        <span className="text-marketplace-400">Program:</span>
+                        <span className="text-marketplace-600 font-medium">{userData.program}</span>
+                      </div>
+                      <div className="flex justify-between text-sm mb-1.5">
+                        <span className="text-marketplace-400">Year:</span>
+                        <span className="text-marketplace-600 font-medium">{userData.year}</span>
+                      </div>
+                      <div className="flex justify-between text-sm mb-1.5">
+                        <span className="text-marketplace-400">Member since:</span>
+                        <span className="text-marketplace-600 font-medium">{userData.memberSince}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-marketplace-400">Response rate:</span>
+                        <span className="text-marketplace-600 font-medium">{userData.responseRate}</span>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
               
-              <button className="btn-secondary w-full flex items-center justify-center">
-                <Edit size={16} className="mr-2" /> Edit Profile
-              </button>
+              {!editMode && (
+                <button onClick={startEditMode} className="btn-secondary w-full flex items-center justify-center">
+                  <Edit size={16} className="mr-2" /> Edit Profile
+                </button>
+              )}
             </div>
             
             {/* User Stats */}
@@ -152,28 +241,28 @@ const Profile = () => {
                     <ShoppingBag size={16} className="text-marketplace-400 mr-2.5" />
                     <span className="text-marketplace-500">Active Listings</span>
                   </div>
-                  <span className="text-marketplace-600 font-medium">{user.listingsCount}</span>
+                  <span className="text-marketplace-600 font-medium">{activeListings.length}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <div className="flex items-center">
                     <Package size={16} className="text-marketplace-400 mr-2.5" />
                     <span className="text-marketplace-500">Items Sold</span>
                   </div>
-                  <span className="text-marketplace-600 font-medium">{user.soldCount}</span>
+                  <span className="text-marketplace-600 font-medium">{soldItems.length}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <div className="flex items-center">
                     <Package size={16} className="text-marketplace-400 mr-2.5" />
                     <span className="text-marketplace-500">Items Purchased</span>
                   </div>
-                  <span className="text-marketplace-600 font-medium">{user.boughtCount}</span>
+                  <span className="text-marketplace-600 font-medium">{purchasedItems.length}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <div className="flex items-center">
                     <Heart size={16} className="text-marketplace-400 mr-2.5" />
                     <span className="text-marketplace-500">Favorites</span>
                   </div>
-                  <span className="text-marketplace-600 font-medium">{user.favoriteCount}</span>
+                  <span className="text-marketplace-600 font-medium">{userData.favoriteCount}</span>
                 </div>
               </div>
             </div>
@@ -291,15 +380,15 @@ const Profile = () => {
                           <div className="flex flex-wrap text-xs text-marketplace-400 mb-3 gap-2">
                             <span>Condition: {listing.condition}</span>
                             <span>•</span>
-                            <span>Posted on: {listing.postedDate}</span>
+                            <span>Posted on: {listing.postedDate || 'Recently'}</span>
                           </div>
                           <div className="flex flex-wrap justify-between items-center">
                             <div className="flex space-x-3 text-xs text-marketplace-500">
                               <span className="flex items-center">
-                                <User size={14} className="mr-1" /> {listing.viewCount} views
+                                <User size={14} className="mr-1" /> {listing.viewCount || 0} views
                               </span>
                               <span className="flex items-center">
-                                <MessageCircle size={14} className="mr-1" /> {listing.messageCount} messages
+                                <MessageCircle size={14} className="mr-1" /> {listing.messageCount || 0} messages
                               </span>
                             </div>
                             <div className="flex space-x-2 mt-2 sm:mt-0">
@@ -326,23 +415,107 @@ const Profile = () => {
               </div>
             )}
             
-            {/* Placeholder for other tabs */}
+            {/* Sold Items Tab */}
             {activeTab === 'sold' && (
-              <div className="text-center py-12 bg-gray-50 rounded-xl animate-fade-in">
-                <Package size={48} className="mx-auto text-gray-300 mb-3" />
-                <h3 className="text-lg font-medium text-marketplace-600 mb-2">No sold items yet</h3>
-                <p className="text-marketplace-400">Items you sell will appear here.</p>
+              <div className="animate-fade-in">
+                <h2 className="text-xl font-display font-semibold text-marketplace-600 mb-6">Items You've Sold</h2>
+                
+                {soldItems.length > 0 ? (
+                  <div className="space-y-4">
+                    {soldItems.map(item => (
+                      <div key={item.id} className="glass-card p-4 flex flex-col sm:flex-row">
+                        <div className="sm:w-32 flex-shrink-0 mb-3 sm:mb-0 sm:mr-4">
+                          <div className="aspect-square rounded-lg overflow-hidden bg-gray-100 relative">
+                            <img 
+                              src={item.image} 
+                              alt={item.title} 
+                              className="w-full h-full object-cover opacity-80"
+                            />
+                            <div className="absolute inset-0 bg-black bg-opacity-20 flex items-center justify-center">
+                              <span className="bg-green-600 text-white text-xs font-medium px-2 py-1 rounded">SOLD</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex-grow">
+                          <div className="flex flex-wrap justify-between mb-2">
+                            <span className="font-medium text-marketplace-600">{item.title}</span>
+                            <span className="font-semibold text-marketplace-accent">${item.price}</span>
+                          </div>
+                          <div className="flex flex-wrap text-xs text-marketplace-400 mb-3 gap-2">
+                            <span>Sold on: {new Date().toLocaleDateString()}</span>
+                            <span>•</span>
+                            <span>To: Anonymous Buyer</span>
+                          </div>
+                          <div className="flex justify-end">
+                            <button className="text-sm py-1.5 px-3 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition duration-200">
+                              View Details
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12 bg-gray-50 rounded-xl">
+                    <Package size={48} className="mx-auto text-gray-300 mb-3" />
+                    <h3 className="text-lg font-medium text-marketplace-600 mb-2">No sold items yet</h3>
+                    <p className="text-marketplace-400">Items you sell will appear here.</p>
+                  </div>
+                )}
               </div>
             )}
             
+            {/* Purchases Tab */}
             {activeTab === 'purchases' && (
-              <div className="text-center py-12 bg-gray-50 rounded-xl animate-fade-in">
-                <Package size={48} className="mx-auto text-gray-300 mb-3" />
-                <h3 className="text-lg font-medium text-marketplace-600 mb-2">No purchases yet</h3>
-                <p className="text-marketplace-400">Items you buy will appear here.</p>
+              <div className="animate-fade-in">
+                <h2 className="text-xl font-display font-semibold text-marketplace-600 mb-6">Items You've Purchased</h2>
+                
+                {purchasedItems.length > 0 ? (
+                  <div className="space-y-4">
+                    {purchasedItems.map(item => (
+                      <div key={item.id} className="glass-card p-4 flex flex-col sm:flex-row">
+                        <div className="sm:w-32 flex-shrink-0 mb-3 sm:mb-0 sm:mr-4">
+                          <div className="aspect-square rounded-lg overflow-hidden bg-gray-100">
+                            <img 
+                              src={item.image} 
+                              alt={item.title} 
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        </div>
+                        <div className="flex-grow">
+                          <div className="flex flex-wrap justify-between mb-2">
+                            <span className="font-medium text-marketplace-600">{item.title}</span>
+                            <span className="font-semibold text-marketplace-accent">${item.price}</span>
+                          </div>
+                          <div className="flex flex-wrap text-xs text-marketplace-400 mb-3 gap-2">
+                            <span>Purchased on: {new Date().toLocaleDateString()}</span>
+                            <span>•</span>
+                            <span>From: {item.seller?.name || 'Unknown Seller'}</span>
+                          </div>
+                          <div className="flex justify-end space-x-2">
+                            <button className="text-sm py-1.5 px-3 bg-gray-100 text-marketplace-500 rounded-lg hover:bg-gray-200 transition duration-200">
+                              Contact Seller
+                            </button>
+                            <button className="text-sm py-1.5 px-3 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition duration-200">
+                              View Details
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12 bg-gray-50 rounded-xl">
+                    <Package size={48} className="mx-auto text-gray-300 mb-3" />
+                    <h3 className="text-lg font-medium text-marketplace-600 mb-2">No purchases yet</h3>
+                    <p className="text-marketplace-400">Items you buy will appear here.</p>
+                  </div>
+                )}
               </div>
             )}
             
+            {/* Favorites Tab */}
             {activeTab === 'favorites' && (
               <div className="text-center py-12 bg-gray-50 rounded-xl animate-fade-in">
                 <Heart size={48} className="mx-auto text-gray-300 mb-3" />

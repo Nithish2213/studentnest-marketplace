@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Layout from '../components/layout/Layout';
@@ -160,24 +161,23 @@ const Home = () => {
     setAllProducts(combinedProducts);
   }, []);
 
-  // Get trending and recent products
+  // Filter products by category
   useEffect(() => {
     if (allProducts.length > 0) {
-      const trending = allProducts.slice(0, 5);
-      const recent = allProducts.slice(5, 10);
-      
       if (selectedCategory === 'All') {
-        setFilteredTrending(trending);
-        setFilteredRecent(recent);
+        // For trending, use first few products
+        setFilteredTrending(allProducts.slice(0, 5));
+        // For recent, prioritize stored products (which are newer)
+        setFilteredRecent(allProducts.slice(0, 5));
       } else {
-        setFilteredTrending(trending.filter(product => 
+        // Filter by selected category
+        const categoryProducts = allProducts.filter(product => 
           product.category === selectedCategory ||
           product.category?.toLowerCase() === selectedCategory.toLowerCase()
-        ));
-        setFilteredRecent(recent.filter(product => 
-          product.category === selectedCategory ||
-          product.category?.toLowerCase() === selectedCategory.toLowerCase()
-        ));
+        );
+        
+        setFilteredTrending(categoryProducts.slice(0, 5));
+        setFilteredRecent(categoryProducts.slice(0, 5));
       }
     }
   }, [selectedCategory, allProducts]);

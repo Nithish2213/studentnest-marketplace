@@ -1,12 +1,10 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/layout/Layout';
 import { useAuth } from '../context/AuthContext';
 import { Camera, X, Upload, Check } from 'lucide-react';
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from '@/hooks/use-toast';
 
-// Import the categories used in the application
 const categories = [
   { value: 'electronics', label: 'Electronics' },
   { value: 'books', label: 'Books' },
@@ -18,7 +16,6 @@ const categories = [
   { value: 'other', label: 'Other' }
 ];
 
-// Import the locations used in the application
 const locations = [
   'West Campus',
   'East Campus',
@@ -33,7 +30,6 @@ const locations = [
   'Off Campus'
 ];
 
-// Import the conditions used in the application
 const conditions = [
   { value: 'new', label: 'New' },
   { value: 'like_new', label: 'Like New' },
@@ -68,7 +64,6 @@ const SellItem = () => {
       [name]: value
     });
     
-    // Clear error when field is edited
     if (errors[name]) {
       setErrors({
         ...errors,
@@ -92,7 +87,6 @@ const SellItem = () => {
     const newImageFiles = [...imageFiles];
     
     files.forEach(file => {
-      // Only allow image files
       if (!file.type.includes('image/')) {
         setErrors({
           ...errors,
@@ -112,13 +106,11 @@ const SellItem = () => {
       reader.readAsDataURL(file);
     });
     
-    // Update form data with the image files
     setFormData({
       ...formData,
       images: [...formData.images, ...files]
     });
     
-    // Clear error when images are added
     if (errors.images) {
       setErrors({
         ...errors,
@@ -185,7 +177,6 @@ const SellItem = () => {
     e.preventDefault();
     
     if (!validateForm()) {
-      // Scroll to the first error
       const firstError = document.querySelector('.error-message');
       if (firstError) {
         firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -196,18 +187,15 @@ const SellItem = () => {
     setIsSubmitting(true);
     
     try {
-      // In a real app, you would upload the images to a server and get URLs
-      // For this example, we'll use the preview URLs directly
       const imageUrls = imageFiles.map(img => img.preview);
       
-      // Create a new product object
       const newProduct = {
-        id: Date.now(), // Generate a temporary ID
+        id: Date.now(),
         title: formData.title,
         description: formData.description,
         price: parseFloat(formData.price),
-        image: imageUrls[0], // Use the first image as the main image
-        images: imageUrls, // Store all images
+        image: imageUrls[0],
+        images: imageUrls,
         condition: conditions.find(c => c.value === formData.condition)?.label || formData.condition,
         category: formData.category,
         location: formData.location,
@@ -220,21 +208,16 @@ const SellItem = () => {
         }
       };
       
-      console.log('New product created:', newProduct);
-      
-      // In a real app, you would send this data to a server
-      // For now, let's store it in localStorage to simulate persistence
       const storedProducts = JSON.parse(localStorage.getItem('products') || '[]');
-      localStorage.setItem('products', JSON.stringify([newProduct, ...storedProducts]));
+      const updatedProducts = [newProduct, ...storedProducts];
+      localStorage.setItem('products', JSON.stringify(updatedProducts));
       
-      // Show success toast
       toast({
         title: "Listing created!",
         description: "Your item has been listed successfully",
         variant: "success",
       });
       
-      // Redirect to home page
       navigate('/');
     } catch (error) {
       console.error('Error creating listing:', error);
@@ -261,7 +244,6 @@ const SellItem = () => {
               </div>
             )}
             
-            {/* Title */}
             <div>
               <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
                 Title <span className="text-red-500">*</span>
@@ -278,7 +260,6 @@ const SellItem = () => {
               {errors.title && <p className="mt-1 text-sm text-red-600 error-message">{errors.title}</p>}
             </div>
             
-            {/* Description */}
             <div>
               <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
                 Description <span className="text-red-500">*</span>
@@ -295,7 +276,6 @@ const SellItem = () => {
               {errors.description && <p className="mt-1 text-sm text-red-600 error-message">{errors.description}</p>}
             </div>
             
-            {/* Price */}
             <div>
               <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-1">
                 Price <span className="text-red-500">*</span>
@@ -317,7 +297,6 @@ const SellItem = () => {
               {errors.price && <p className="mt-1 text-sm text-red-600 error-message">{errors.price}</p>}
             </div>
             
-            {/* Category and Condition */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
@@ -362,7 +341,6 @@ const SellItem = () => {
               </div>
             </div>
             
-            {/* Location */}
             <div>
               <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-1">
                 Location <span className="text-red-500">*</span>
@@ -384,7 +362,6 @@ const SellItem = () => {
               {errors.location && <p className="mt-1 text-sm text-red-600 error-message">{errors.location}</p>}
             </div>
             
-            {/* Images */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Images <span className="text-red-500">*</span>
@@ -392,7 +369,6 @@ const SellItem = () => {
               </label>
               
               <div className="mt-2 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
-                {/* Image previews */}
                 {imageFiles.map((image, index) => (
                   <div key={index} className="relative group aspect-square">
                     <img 
@@ -415,7 +391,6 @@ const SellItem = () => {
                   </div>
                 ))}
                 
-                {/* Upload button */}
                 {imageFiles.length < 5 && (
                   <div className="aspect-square border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center text-gray-500 cursor-pointer hover:border-marketplace-accent/50 transition-colors">
                     <input

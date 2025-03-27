@@ -1,6 +1,7 @@
 
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useToast } from '@/hooks/use-toast';
 
 // Create the context
 const AuthContext = createContext();
@@ -10,26 +11,73 @@ export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   // Initialize user from localStorage
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
-      setCurrentUser(JSON.parse(storedUser));
+      const parsedUser = JSON.parse(storedUser);
+      setCurrentUser(parsedUser);
+      
+      // Redirect to appropriate dashboard based on user type
+      if (parsedUser.isAuthenticated) {
+        if (parsedUser.type === 'admin') {
+          navigate('/admin');
+        } else {
+          navigate('/home');
+        }
+      }
     }
     setLoading(false);
   }, []);
 
   // Sign in
   const signIn = (userData) => {
-    setCurrentUser(userData);
-    localStorage.setItem('user', JSON.stringify(userData));
+    // Determine user type based on email domain
+    let userType = 'student';
+    if (userData.email && userData.email.endsWith('@kgisl.ac.in')) {
+      userType = 'admin';
+    } else if (userData.email && userData.email.endsWith('@kgkite.ac.in')) {
+      userType = 'student';
+    }
+    
+    // Create user data with type
+    const userWithType = {
+      ...userData,
+      isAuthenticated: true,
+      type: userType
+    };
+    
+    setCurrentUser(userWithType);
+    localStorage.setItem('user', JSON.stringify(userWithType));
+    
+    // Show welcome toast
+    toast({
+      title: `Welcome, ${userData.name || 'User'}!`,
+      description: `You've successfully signed in as ${userType}`,
+      variant: "success",
+    });
+    
+    // Redirect based on user type
+    if (userType === 'admin') {
+      navigate('/admin');
+    } else {
+      navigate('/home');
+    }
   };
 
   // Sign out
   const signOut = () => {
     setCurrentUser(null);
     localStorage.removeItem('user');
+    
+    toast({
+      title: "Signed out",
+      description: "You have been successfully signed out",
+      variant: "default",
+    });
+    
     navigate('/signin');
   };
 

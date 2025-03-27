@@ -21,6 +21,8 @@ const SignIn = lazy(() => import("./pages/SignIn"));
 const SignUp = lazy(() => import("./pages/SignUp"));
 const ChatWithSeller = lazy(() => import("./pages/ChatWithSeller"));
 const SellerProfile = lazy(() => import("./pages/SellerProfile"));
+const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
+const Index = lazy(() => import("./pages/Index"));
 
 const queryClient = new QueryClient();
 
@@ -34,8 +36,10 @@ const App = () => (
             <Sonner />
             <Suspense fallback={<LoadingScreen />}>
               <Routes>
+                <Route path="/" element={<Index />} />
+                
                 <Route 
-                  path="/" 
+                  path="/home" 
                   element={
                     <RequireAuth>
                       <Home />
@@ -95,6 +99,14 @@ const App = () => (
                   element={
                     <RequireAuth>
                       <SellerProfile />
+                    </RequireAuth>
+                  } 
+                />
+                <Route 
+                  path="/admin" 
+                  element={
+                    <RequireAuth>
+                      <AdminDashboard />
                     </RequireAuth>
                   } 
                 />

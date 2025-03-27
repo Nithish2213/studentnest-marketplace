@@ -24,6 +24,8 @@ const ChatWithSeller = lazy(() => import("./pages/ChatWithSeller"));
 const SellerProfile = lazy(() => import("./pages/SellerProfile"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const Index = lazy(() => import("./pages/Index"));
+const TrendingItems = lazy(() => import("./pages/TrendingItems"));
+const RecentItems = lazy(() => import("./pages/RecentItems"));
 
 const queryClient = new QueryClient();
 
@@ -108,6 +110,22 @@ const App = () => (
                   element={
                     <RequireAuth>
                       <AdminDashboard />
+                    </RequireAuth>
+                  } 
+                />
+                <Route 
+                  path="/category/trending" 
+                  element={
+                    <RequireAuth>
+                      <TrendingItems />
+                    </RequireAuth>
+                  } 
+                />
+                <Route 
+                  path="/category/recent" 
+                  element={
+                    <RequireAuth>
+                      <RecentItems />
                     </RequireAuth>
                   } 
                 />

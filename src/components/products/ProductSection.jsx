@@ -2,6 +2,7 @@
 import React from 'react';
 import ProductCard from './ProductCard';
 import { ChevronRight, PackageOpen } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const ProductSection = ({ title, viewAllLink, products, emptyMessage = "No products available" }) => {
   return (
@@ -10,9 +11,9 @@ const ProductSection = ({ title, viewAllLink, products, emptyMessage = "No produ
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl md:text-2xl font-display font-semibold text-marketplace-600">{title}</h2>
           {viewAllLink && products.length > 0 && (
-            <a href={viewAllLink} className="text-marketplace-accent text-sm font-medium flex items-center hover:underline">
+            <Link to={viewAllLink} className="text-marketplace-accent text-sm font-medium flex items-center hover:underline">
               View all <ChevronRight size={16} className="ml-1" />
-            </a>
+            </Link>
           )}
         </div>
         

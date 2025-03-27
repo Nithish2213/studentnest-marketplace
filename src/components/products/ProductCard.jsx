@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Heart, Star } from 'lucide-react';
+import { Heart } from 'lucide-react';
 import { useFavorites } from '../../context/FavoritesContext';
 
 const ProductCard = ({ product }) => {
@@ -36,11 +36,6 @@ const ProductCard = ({ product }) => {
         >
           <Heart size={18} fill={productIsFavorite ? "currentColor" : "none"} />
         </button>
-        {product.condition && (
-          <span className="absolute top-3 left-3 text-xs font-medium px-2 py-1 rounded-md bg-white/70 backdrop-blur-sm text-marketplace-600">
-            {product.condition}
-          </span>
-        )}
       </div>
       <div className="p-4">
         <div className="flex justify-between items-start">
@@ -48,18 +43,17 @@ const ProductCard = ({ product }) => {
           <span className="font-semibold text-marketplace-accent">${product.price.toFixed(2)}</span>
         </div>
         <p className="text-sm text-marketplace-400 mt-1 line-clamp-1">{product.description}</p>
+        {product.condition && (
+          <span className="text-xs font-medium text-marketplace-600 mt-2 inline-block">
+            {product.condition}
+          </span>
+        )}
         <div className="flex justify-between items-center mt-2">
           <div className="flex items-center text-sm text-marketplace-400">
             <span>{product.location}</span>
             <span className="mx-1.5">•</span>
             <span>{product.timeAgo}</span>
           </div>
-          {product.rating && (
-            <div className="flex items-center text-sm">
-              <Star size={14} className="text-yellow-400 mr-1" fill="currentColor" />
-              <span className="text-marketplace-500">{product.rating}</span>
-            </div>
-          )}
         </div>
       </div>
     </Link>

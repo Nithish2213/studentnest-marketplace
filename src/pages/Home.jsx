@@ -218,7 +218,7 @@ const Home = () => {
             Reach thousands of students at your university. Listing is free and takes less than 2 minutes!
           </p>
           <Link to="/sell" className="btn-primary inline-flex items-center">
-            Create Listing
+            Sell an Item
           </Link>
         </div>
       </section>

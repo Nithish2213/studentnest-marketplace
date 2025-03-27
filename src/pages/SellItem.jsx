@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/layout/Layout';
@@ -43,7 +44,7 @@ const SellItem = () => {
   const { currentUser } = useAuth();
   const { toast } = useToast();
   
-  const [formData, setFormData] = useState({
+  const initialFormState = {
     title: '',
     description: '',
     price: '',
@@ -51,8 +52,9 @@ const SellItem = () => {
     condition: '',
     location: '',
     images: []
-  });
+  };
   
+  const [formData, setFormData] = useState(initialFormState);
   const [errors, setErrors] = useState({});
   const [imageFiles, setImageFiles] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -173,6 +175,12 @@ const SellItem = () => {
     return Object.keys(newErrors).length === 0;
   };
 
+  const resetForm = () => {
+    setFormData(initialFormState);
+    setImageFiles([]);
+    setErrors({});
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -213,12 +221,14 @@ const SellItem = () => {
       localStorage.setItem('products', JSON.stringify(updatedProducts));
       
       toast({
-        title: "Listing created!",
-        description: "Your item has been listed successfully",
+        title: "Item successfully listed!",
+        description: "Your item has been added to the marketplace",
         variant: "success",
       });
       
-      navigate('/home');
+      // Reset the form after successful submission
+      resetForm();
+      setIsSubmitting(false);
     } catch (error) {
       console.error('Error creating listing:', error);
       setErrors({
@@ -233,7 +243,7 @@ const SellItem = () => {
     <Layout showCategories={false}>
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         <h1 className="text-2xl md:text-3xl font-display font-semibold text-marketplace-600 mb-6">
-          Create a New Listing
+          Sell an Item
         </h1>
         
         <div className="bg-white rounded-xl shadow-sm overflow-hidden">
@@ -423,12 +433,12 @@ const SellItem = () => {
                 {isSubmitting ? (
                   <>
                     <Upload size={18} className="mr-2 animate-spin" />
-                    Creating Listing...
+                    Selling Item...
                   </>
                 ) : (
                   <>
                     <Check size={18} className="mr-2" />
-                    Create Listing
+                    Sell Item
                   </>
                 )}
               </button>

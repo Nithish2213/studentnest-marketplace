@@ -20,27 +20,6 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '@/components/ui/textarea';
 
-// Default user data will be replaced by real data from context
-const defaultUserData = {
-  id: 123,
-  name: 'Alex Johnson',
-  email: 'alex.johnson@university.edu',
-  avatar: 'https://i.pravatar.cc/300?img=12',
-  university: 'State University',
-  program: 'Computer Science',
-  year: 'Junior',
-  memberSince: 'January 2022',
-  listingsCount: 8,
-  soldCount: 5,
-  boughtCount: 12,
-  favoriteCount: 24,
-  rating: 4.9,
-  responseRate: '98%',
-  responseTime: 'Under 1 hour',
-  verified: true,
-  bio: 'Computer Science student interested in tech gadgets, books, and outdoor gear. Always looking for good deals on campus!'
-};
-
 const Profile = () => {
   const [activeTab, setActiveTab] = useState('listings');
   const { currentUser, signOut } = useAuth();
@@ -52,30 +31,40 @@ const Profile = () => {
   const [soldItems, setSoldItems] = useState([]);
   const [purchasedItems, setPurchasedItems] = useState([]);
   
-  // Load user data from localStorage or use default
+  // Load user data from current user in auth context
   useEffect(() => {
-    // Try to get user profile data from localStorage
-    const storedUserData = localStorage.getItem('userProfile');
+    if (!currentUser) return;
+    
+    // Get existing profile data or initialize new one
+    const storedUserData = localStorage.getItem('userProfile_' + currentUser.email);
     let profileData;
     
     if (storedUserData) {
       profileData = JSON.parse(storedUserData);
     } else {
-      // Use currentUser data from auth context with default values as fallback
+      // Use currentUser data
       profileData = {
-        ...defaultUserData,
-        id: currentUser?.id || defaultUserData.id,
-        name: currentUser?.name || defaultUserData.name,
-        email: currentUser?.email || defaultUserData.email,
-        avatar: currentUser?.avatar || defaultUserData.avatar,
-        university: currentUser?.university || defaultUserData.university,
-        program: currentUser?.program || defaultUserData.program,
-        year: currentUser?.year || defaultUserData.year,
-        bio: currentUser?.bio || defaultUserData.bio,
+        id: currentUser.id || Date.now().toString(),
+        name: currentUser.name || '',
+        email: currentUser.email || '',
+        avatar: currentUser.avatar || null,
+        university: currentUser.university || 'KG College',
+        program: currentUser.program || 'Computer Science',
+        year: currentUser.year || 'Junior',
+        memberSince: currentUser.memberSince || new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+        bio: currentUser.bio || '',
+        listingsCount: 0,
+        soldCount: 0,
+        boughtCount: 0,
+        favoriteCount: 0,
+        rating: 4.8,
+        responseRate: '95%',
+        responseTime: 'Under 1 hour',
+        verified: true
       };
       
       // Save to localStorage for future use
-      localStorage.setItem('userProfile', JSON.stringify(profileData));
+      localStorage.setItem('userProfile_' + currentUser.email, JSON.stringify(profileData));
     }
     
     setUserData(profileData);
@@ -85,19 +74,27 @@ const Profile = () => {
     const allProducts = JSON.parse(localStorage.getItem('products') || '[]');
     
     // Active listings are products created by this user
-    setActiveListings(allProducts.filter(product => 
+    const userListings = allProducts.filter(product => 
       product.seller && product.seller.id === profileData.id
-    ).slice(0, 3)); // Show only 3 items
+    );
+    
+    setActiveListings(userListings);
     
     // For demo purposes, we'll use some of these as "sold" items
-    setSoldItems(allProducts.filter(product => 
-      product.seller && product.seller.id === profileData.id
-    ).slice(0, 2)); // First 2 items as "sold"
+    setSoldItems(userListings.slice(0, Math.min(2, userListings.length)));
     
     // For demo purposes, use other products as "purchased" items
     setPurchasedItems(allProducts.filter(product => 
       !product.seller || product.seller.id !== profileData.id
-    ).slice(0, 2)); // Other items as "purchased"
+    ).slice(0, 2));
+    
+    // Update counts
+    profileData.listingsCount = userListings.length;
+    profileData.soldCount = Math.min(2, userListings.length);
+    profileData.boughtCount = Math.min(2, allProducts.length);
+    
+    // Save updated counts
+    localStorage.setItem('userProfile_' + currentUser.email, JSON.stringify(profileData));
     
   }, [currentUser]);
 
@@ -122,7 +119,7 @@ const Profile = () => {
     };
     
     // Save to localStorage
-    localStorage.setItem('userProfile', JSON.stringify(updatedUserData));
+    localStorage.setItem('userProfile_' + currentUser.email, JSON.stringify(updatedUserData));
     setUserData(updatedUserData);
     setEditMode(false);
     
@@ -157,9 +154,9 @@ const Profile = () => {
                   </div>
                 )}
                 <h1 className="text-xl font-display font-semibold text-marketplace-600">
-                  {userData.name}
+                  {userData.name || currentUser.email.split('@')[0]}
                 </h1>
-                <p className="text-marketplace-400 text-sm mt-1">{userData.university}</p>
+                <p className="text-marketplace-400 text-sm mt-1">{userData.email}</p>
                 
                 <div className="flex items-center mt-2">
                   <div className="flex items-center text-yellow-400">
@@ -202,8 +199,16 @@ const Profile = () => {
                   </div>
                 ) : (
                   <>
-                    <p className="text-sm text-marketplace-500">{userData.bio}</p>
+                    <p className="text-sm text-marketplace-500">{userData.bio || "No bio yet. Click Edit Profile to add one."}</p>
                     <div className="pt-3 border-t border-gray-100">
+                      <div className="flex justify-between text-sm mb-1.5">
+                        <span className="text-marketplace-400">Email:</span>
+                        <span className="text-marketplace-600 font-medium">{userData.email}</span>
+                      </div>
+                      <div className="flex justify-between text-sm mb-1.5">
+                        <span className="text-marketplace-400">University:</span>
+                        <span className="text-marketplace-600 font-medium">{userData.university}</span>
+                      </div>
                       <div className="flex justify-between text-sm mb-1.5">
                         <span className="text-marketplace-400">Program:</span>
                         <span className="text-marketplace-600 font-medium">{userData.program}</span>
@@ -215,10 +220,6 @@ const Profile = () => {
                       <div className="flex justify-between text-sm mb-1.5">
                         <span className="text-marketplace-400">Member since:</span>
                         <span className="text-marketplace-600 font-medium">{userData.memberSince}</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-marketplace-400">Response rate:</span>
-                        <span className="text-marketplace-600 font-medium">{userData.responseRate}</span>
                       </div>
                     </div>
                   </>

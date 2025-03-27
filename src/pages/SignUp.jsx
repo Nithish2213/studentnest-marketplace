@@ -1,7 +1,7 @@
-
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Eye, EyeOff, Mail, Lock, User } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 const SignUp = () => {
   const [name, setName] = useState('');
@@ -12,6 +12,7 @@ const SignUp = () => {
   const [userType, setUserType] = useState('student'); // 'student' or 'admin'
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   const validateEmail = (email) => {
     // Simple email validation
@@ -49,20 +50,63 @@ const SignUp = () => {
       return;
     }
     
-    // In a real app, we would make an API call to register the user
-    // For this demo, we'll just redirect to home
-    console.log(`Registering as ${userType} with email: ${email}`);
+    // Create a unique ID for this user
+    const userId = Date.now().toString();
     
-    // Store user information in localStorage
-    localStorage.setItem('user', JSON.stringify({
+    // Create user data with profile information
+    const userData = {
+      id: userId,
       name,
       email,
       type: userType,
-      isAuthenticated: true
-    }));
+      isAuthenticated: true,
+      university: userType === 'student' ? 'KG College' : 'KG Institute of Technology',
+      program: 'Computer Science',
+      year: 'Junior',
+      memberSince: new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+      bio: '',
+    };
     
-    // Redirect to home
-    navigate('/');
+    // Store user information in localStorage
+    localStorage.setItem('user', JSON.stringify(userData));
+    
+    // Initialize an empty profile for this user
+    const profileData = {
+      id: userId,
+      name,
+      email,
+      avatar: null,
+      university: userData.university,
+      program: userData.program,
+      year: userData.year,
+      memberSince: userData.memberSince,
+      bio: '',
+      listingsCount: 0,
+      soldCount: 0,
+      boughtCount: 0,
+      favoriteCount: 0,
+      rating: 4.8,
+      responseRate: '95%',
+      responseTime: 'Under 1 hour',
+      verified: true
+    };
+    
+    // Save profile to localStorage
+    localStorage.setItem('userProfile_' + email, JSON.stringify(profileData));
+    
+    // Show success message
+    toast({
+      title: "Account created!",
+      description: "Your account has been created successfully",
+      variant: "success",
+    });
+    
+    // Redirect based on user type
+    if (userType === 'admin') {
+      navigate('/admin');
+    } else {
+      navigate('/home');
+    }
   };
 
   return (

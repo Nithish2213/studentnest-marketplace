@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 const SignIn = () => {
   const [email, setEmail] = useState('');
@@ -18,7 +17,7 @@ const SignIn = () => {
   // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated()) {
-      navigate('/');
+      navigate('/home');
     }
   }, [isAuthenticated, navigate]);
 
@@ -53,8 +52,13 @@ const SignIn = () => {
       return;
     }
     
+    // Extract name from email (before @)
+    const name = email.split('@')[0];
+    
     // Create user data
     const userData = {
+      id: Date.now().toString(),
+      name: name.charAt(0).toUpperCase() + name.slice(1), // Capitalize first letter
       email,
       type: userType,
       isAuthenticated: true
@@ -71,7 +75,7 @@ const SignIn = () => {
     });
     
     // Redirect to home
-    navigate('/');
+    navigate('/home');
   };
 
   return (

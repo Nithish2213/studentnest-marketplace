@@ -218,7 +218,7 @@ const SellItem = () => {
         variant: "success",
       });
       
-      navigate('/');
+      navigate('/home');
     } catch (error) {
       console.error('Error creating listing:', error);
       setErrors({

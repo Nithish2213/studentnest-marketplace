@@ -1,6 +1,6 @@
 
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 
 // Create the context
@@ -11,26 +11,33 @@ export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
 
   // Initialize user from localStorage
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
-      const parsedUser = JSON.parse(storedUser);
-      setCurrentUser(parsedUser);
-      
-      // Redirect to appropriate dashboard based on user type
-      if (parsedUser.isAuthenticated) {
-        if (parsedUser.type === 'admin') {
-          navigate('/admin');
-        } else {
-          navigate('/home');
+      try {
+        const parsedUser = JSON.parse(storedUser);
+        setCurrentUser(parsedUser);
+        
+        // Only redirect if we're on the signin, signup, or index page
+        const authPages = ['/', '/signin', '/signup'];
+        if (parsedUser.isAuthenticated && authPages.includes(location.pathname)) {
+          if (parsedUser.type === 'admin') {
+            navigate('/admin');
+          } else {
+            navigate('/home');
+          }
         }
+      } catch (error) {
+        console.error('Error parsing user data:', error);
+        localStorage.removeItem('user');
       }
     }
     setLoading(false);
-  }, []);
+  }, [location.pathname]);
 
   // Sign in
   const signIn = (userData) => {

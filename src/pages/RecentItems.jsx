@@ -13,14 +13,13 @@ const RecentItems = () => {
     const storedProducts = JSON.parse(localStorage.getItem('products') || '[]');
     
     // Sort products by timeAgo (most recent first)
-    // This is a simplified sorting - in a real app you'd use timestamps
     const sortedProducts = [...storedProducts].sort((a, b) => {
       // Simple string comparison for now (not perfect but works for demo)
-      const aTime = parseInt(a.timeAgo?.split(' ')[0]) || 0;
-      const bTime = parseInt(b.timeAgo?.split(' ')[0]) || 0;
-      
       if (a.timeAgo?.includes('hour') && b.timeAgo?.includes('day')) return -1;
       if (a.timeAgo?.includes('day') && b.timeAgo?.includes('hour')) return 1;
+      
+      const aTime = parseInt(a.timeAgo?.split(' ')[0]) || 0;
+      const bTime = parseInt(b.timeAgo?.split(' ')[0]) || 0;
       
       return aTime - bTime;
     });

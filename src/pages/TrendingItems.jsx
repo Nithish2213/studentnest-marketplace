@@ -11,16 +11,9 @@ const TrendingItems = () => {
   useEffect(() => {
     // Get all products from localStorage
     const storedProducts = JSON.parse(localStorage.getItem('products') || '[]');
-    const initialProducts = [
-      // ... This would normally fetch from an API
-      // For now, we'll simulate by filtering the products we get from localStorage
-    ];
-    
-    // Combine stored products with initial products, avoiding duplicates by ID
-    const combinedProducts = [...storedProducts];
     
     // Sort by rating (trending items are usually highly rated)
-    const sortedProducts = combinedProducts.sort((a, b) => {
+    const sortedProducts = [...storedProducts].sort((a, b) => {
       return (b.rating || 0) - (a.rating || 0);
     });
     

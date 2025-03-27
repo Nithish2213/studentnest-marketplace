@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import Layout from '../components/layout/Layout';
 import { useAuth } from '../context/AuthContext';
 import { Button } from '@/components/ui/button';
-import { UserCircle, Edit, Save, X } from 'lucide-react';
+import { UserCircle, Edit, Save, X, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const Profile = () => {
@@ -11,6 +11,12 @@ const Profile = () => {
   const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const [bio, setBio] = useState(currentUser?.bio || '');
+  const [userListings, setUserListings] = useState(getUserListings());
+
+  function getUserListings() {
+    const allProducts = JSON.parse(localStorage.getItem('products') || '[]');
+    return allProducts.filter(product => product.seller?.id === currentUser?.id);
+  }
 
   const handleSaveBio = () => {
     // Update user in local storage with new bio
@@ -32,13 +38,26 @@ const Profile = () => {
     setIsEditing(false);
   };
 
-  // Get user's listings from localStorage
-  const getUserListings = () => {
+  const handleDeleteListing = (productId) => {
+    // Get all products
     const allProducts = JSON.parse(localStorage.getItem('products') || '[]');
-    return allProducts.filter(product => product.seller?.id === currentUser?.id);
+    
+    // Filter out the product to delete
+    const updatedProducts = allProducts.filter(product => product.id !== productId);
+    
+    // Save back to localStorage
+    localStorage.setItem('products', JSON.stringify(updatedProducts));
+    
+    // Update state
+    setUserListings(getUserListings());
+    
+    // Show success toast
+    toast({
+      title: "Listing removed",
+      description: "Your listing has been removed successfully",
+      variant: "success",
+    });
   };
-
-  const userListings = getUserListings();
 
   return (
     <Layout>
@@ -137,7 +156,7 @@ const Profile = () => {
           {userListings.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {userListings.map(product => (
-                <div key={product.id} className="bg-white rounded-lg shadow-sm overflow-hidden">
+                <div key={product.id} className="bg-white rounded-lg shadow-sm overflow-hidden relative">
                   <div className="aspect-w-16 aspect-h-9 h-48">
                     <img 
                       src={product.image} 
@@ -150,6 +169,13 @@ const Profile = () => {
                     <p className="text-marketplace-accent font-semibold mt-1">${product.price}</p>
                     <p className="text-sm text-gray-500 mt-1">{product.timeAgo}</p>
                   </div>
+                  <button
+                    onClick={() => handleDeleteListing(product.id)}
+                    className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+                    aria-label="Delete listing"
+                  >
+                    <Trash2 size={16} />
+                  </button>
                 </div>
               ))}
             </div>
@@ -161,7 +187,7 @@ const Profile = () => {
                 className="mt-4"
                 onClick={() => window.location.href = '/sell'}
               >
-                Sell an Item
+                Create a New Listing
               </Button>
             </div>
           )}

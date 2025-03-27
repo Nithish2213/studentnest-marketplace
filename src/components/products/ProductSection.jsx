@@ -5,6 +5,9 @@ import { ChevronRight, PackageOpen } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const ProductSection = ({ title, viewAllLink, products, emptyMessage = "No products available" }) => {
+  // Limit the number of products shown in the section
+  const displayProducts = products.slice(0, 5);
+  
   return (
     <section className="py-8">
       <div className="container mx-auto px-4">
@@ -19,7 +22,7 @@ const ProductSection = ({ title, viewAllLink, products, emptyMessage = "No produ
         
         {products.length > 0 ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
-            {products.map((product) => (
+            {displayProducts.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
           </div>

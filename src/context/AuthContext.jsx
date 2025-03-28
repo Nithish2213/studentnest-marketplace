@@ -37,7 +37,7 @@ export const AuthProvider = ({ children }) => {
       }
     }
     setLoading(false);
-  }, [location.pathname]);
+  }, [location.pathname, navigate]);
 
   // Sign in
   const signIn = (userData) => {

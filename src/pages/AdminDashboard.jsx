@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -12,7 +11,6 @@ import {
   ArrowDown,
   ArrowUp,
   Search,
-  MoreVertical,
   Filter,
   Download,
   Trash,
@@ -22,7 +20,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 
 const AdminDashboard = () => {
-  const { currentUser, signOut } = useAuth();
+  const { currentUser, signOut, isAdmin } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -47,14 +45,14 @@ const AdminDashboard = () => {
 
   // Check if user is admin
   useEffect(() => {
-    // In a real app, you would check user roles
-    if (currentUser?.type !== 'admin') {
+    if (!isAdmin()) {
       toast({
         title: "Access denied",
         description: "You don't have permission to access the admin dashboard",
         variant: "destructive",
       });
-      navigate('/');
+      navigate('/home');
+      return;
     }
 
     // Load products from localStorage
@@ -70,7 +68,7 @@ const AdminDashboard = () => {
       recentUsers: 5 + Math.floor(Math.random() * 10),
       reportedItems: Math.floor(Math.random() * 8)
     });
-  }, [currentUser, navigate, toast]);
+  }, [isAdmin, navigate, toast]);
 
   const handleLogout = () => {
     signOut();
@@ -108,6 +106,11 @@ const AdminDashboard = () => {
       variant: "default",
     });
   };
+
+  // If not admin, don't render the dashboard
+  if (!isAdmin()) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-gray-100 flex">

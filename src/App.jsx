@@ -8,7 +8,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { lazy, Suspense } from "react";
 import LoadingScreen from "./components/LoadingScreen";
 import { FavoritesProvider } from "./context/FavoritesContext";
-import { AuthProvider, RequireAuth } from "./context/AuthContext";
+import { AuthProvider, RequireAuth, RequireAdmin } from "./context/AuthContext";
 
 // Lazy load pages for better performance
 const Home = lazy(() => import("./pages/Home"));
@@ -108,9 +108,9 @@ const App = () => (
                 <Route 
                   path="/admin" 
                   element={
-                    <RequireAuth>
+                    <RequireAdmin>
                       <AdminDashboard />
-                    </RequireAuth>
+                    </RequireAdmin>
                   } 
                 />
                 <Route 

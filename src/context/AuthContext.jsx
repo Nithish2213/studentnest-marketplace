@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -145,4 +144,22 @@ export const RequireAuth = ({ children }) => {
   }
 
   return isAuthenticated() ? children : null;
+};
+
+// Admin route protection
+export const RequireAdmin = ({ children }) => {
+  const { isAuthenticated, isAdmin, loading } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!loading && (!isAuthenticated() || !isAdmin())) {
+      navigate('/signin');
+    }
+  }, [isAuthenticated, isAdmin, loading, navigate]);
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  return isAuthenticated() && isAdmin() ? children : null;
 };
